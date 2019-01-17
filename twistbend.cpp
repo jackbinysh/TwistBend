@@ -40,7 +40,7 @@ double *nx,*ny,*nz,*px,*py,*pz;
 double *hx,*hy,*hz,*hpx,*hpy,*hpz;
 ofstream output,output2,outputFE;
 
-char free_energy[200],vtk_director[200],vtk_polarisation[200],vtk_TWIST[200],vtk_BEND[200],pitch_defect[200],pitch_p[200];
+char free_energy[200],vtk_director[200],vtk_polarisation[200],vtk_BEND[200];
 char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 
 // ============================================================
@@ -285,7 +285,7 @@ void startconfig(void)
 /**********************************************************************/
 void update(void)
 {
-  int j,k,l,m,jj;
+  int j,k,l,m;
   int xup,xdwn,yup,ydwn,zup,zdwn;
   double Dxnx,Dynx,Dznx,Dxxnx,Dyynx,Dzznx;
   double Dxny,Dyny,Dzny,Dxxny,Dyyny,Dzzny;
@@ -294,7 +294,6 @@ void update(void)
   double Dxpx,Dypx,Dzpx,Dxxpx,Dyypx,Dzzpx;
   double Dxpy,Dypy,Dzpy,Dxxpy,Dyypy,Dzzpy;
   double Dxpz,Dypz,Dzpz,Dxxpz,Dyypz,Dzzpz;
-  double hpdotp;
 
   k=l=m=0;
 
@@ -366,9 +365,9 @@ void update(void)
     Dzzpz = pz[zup]-2.0*pz[j]+pz[zdwn];
      
     // calculate molecular field
-    hx[j] = K*(Dxxnx+Dyynx+Dzznx) - 2.0*K*q0*(Dynz-Dzny) + lambda*(px[j]*Dxnx+py[j]*Dxny+pz[j]*Dxnz - px[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpx+ny[j]*Dypx+nz[j]*Dzpx));
-    hy[j] = K*(Dxxny+Dyyny+Dzzny) - 2.0*K*q0*(Dznx-Dxnz) + lambda*(px[j]*Dynx+py[j]*Dyny+pz[j]*Dynz - py[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpy+ny[j]*Dypy+nz[j]*Dzpy));
-    hz[j] = K*(Dxxnz+Dyynz+Dzznz) - 2.0*K*q0*(Dxny-Dynx) + lambda*(px[j]*Dznx+py[j]*Dzny+pz[j]*Dznz - pz[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpz+ny[j]*Dypz+nz[j]*Dzpz));
+    hx[j] = K*(Dxxnx+Dyynx+Dzznx) + lambda*(px[j]*Dxnx+py[j]*Dxny+pz[j]*Dxnz - px[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpx+ny[j]*Dypx+nz[j]*Dzpx));
+    hy[j] = K*(Dxxny+Dyyny+Dzzny) + lambda*(px[j]*Dynx+py[j]*Dyny+pz[j]*Dynz - py[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpy+ny[j]*Dypy+nz[j]*Dzpy));
+    hz[j] = K*(Dxxnz+Dyynz+Dzznz) + lambda*(px[j]*Dznx+py[j]*Dzny+pz[j]*Dznz - pz[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpz+ny[j]*Dypz+nz[j]*Dzpz));
 
     hdotn = nx[j]*hx[j] + ny[j]*hy[j] + nz[j]*hz[j];
     hx[j] -= nx[j]*hdotn;
