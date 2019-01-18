@@ -17,7 +17,7 @@ using namespace std;
 // ============================================================
 
 const int Nmax = 50000;       // Number of timesteps
-const int stepskip = 1000;   // print pitch and bend every stepskip timesteps
+const int stepskip = 0;   // print pitch and bend every stepskip timesteps
 const int Lx = 80;          // System size
 const int Ly = 80;          // System size
 const int Lz = 40;          // System size
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
                                     writeBENDfiles();      // output VTK files for use with ParaView
                                     step=0;
                             }
-                            //step++;
+                            step++;
                             n++;
                     }
                     update();
