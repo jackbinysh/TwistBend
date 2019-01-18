@@ -17,10 +17,10 @@ using namespace std;
 // ============================================================
 
 const int Nmax = 50000;       // Number of timesteps
-const int stepskip = 0;   // print pitch and bend every stepskip timesteps
-const int Lx = 80;          // System size
-const int Ly = 80;          // System size
-const int Lz = 40;          // System size
+const int stepskip = 1000;   // print pitch and bend every stepskip timesteps
+const int Lx = 100;          // System size
+const int Ly = 100;          // System size
+const int Lz = 50;          // System size
 
 // ============================================================
 
@@ -49,10 +49,10 @@ char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 int main(int argc, char** argv) 
 {
     LL=Lx*Ly*Lz;     // total system size
-    K = 0.04;       // elastic constant
+    K = 0.1;       // elastic constant
     dt = 4*0.65;        // integration timestep
     thetah = M_PI/6.0;  // heliconical angle
-    qh = 2.0*(2.0*M_PI/Lz);  // heliconical pitch
+    qh = 1.0*(2.0*M_PI/Lz);  // heliconical pitch
     // lambda = (Kq/2) tan(2thetah)
     lambda = 0.5*K*qh*tan(2.0*thetah);
     // C = K sin^4(thetah)/cos(2thetah)
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
                                     writeBENDfiles();      // output VTK files for use with ParaView
                                     step=0;
                             }
-                            //step++;
+                            step++;
                             n++;
                     }
                     update();
