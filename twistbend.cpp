@@ -84,7 +84,7 @@ int main(int argc, char** argv)
                                     writeBENDfiles();      // output VTK files for use with ParaView
                                     step=0;
                             }
-                            step++;
+                            //step++;
                             n++;
                     }
                     update();
@@ -122,8 +122,8 @@ void startconfig(void)
         double k0,l0,m0;
 
         // define texture to simulate -- 0 or 1
-        HELICONICAL = 0; // standard heliconical texture
-        HOPF = 1; // Hopf texture
+        HELICONICAL = 1; // standard heliconical texture
+        HOPF = 0; // Hopf texture
         SQUARE = 0;
 
         // initial configuration
@@ -246,7 +246,7 @@ void startconfig(void)
 
         // square
         if (SQUARE == 1) {
-                double norm,r,R,phi;
+                double r,R,phi;
                 R = 0.8*Lx/2.0;
 
                 for (j=0; j<LL; j++) {
@@ -299,6 +299,7 @@ void startconfig(void)
 /**********************************************************************/
 void update(void)
 {
+        int k,l,m;
         int xup,xdwn,yup,ydwn,zup,zdwn;
         double Dxnx,Dynx,Dznx,Dxxnx,Dyynx,Dzznx;
         double Dxny,Dyny,Dzny,Dxxny,Dyyny,Dzzny;
@@ -310,9 +311,9 @@ void update(void)
         /* Calculate derivatives, molecular field and the energy */
 
 #pragma omp for
-        for (int k=0; k<Lx; k++) {
-                for (int l=0; l<Ly; l++) {
-                        for (int m=0; m<Lz; m++) {
+        for (k=0; k<Lx; k++) {
+                for (l=0; l<Ly; l++) {
+                        for ( m=0; m<Lz; m++) {
                                 // where am I in the 1-D array?
                                 int j = pt(k,l,m);
                                 // define neighbouring nodes in the 1-D array
@@ -384,7 +385,7 @@ void update(void)
                                 Dzzpz = pz[zup]-2.0*pz[j]+pz[zdwn];
 
                                 // calculate molecular field
-                                  hx[j] = K*(Dxxnx+Dyynx+Dzznx) + lambda*(px[j]*Dxnx+py[j]*Dxny+pz[j]*Dxnz - px[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpx+ny[j]*Dypx+nz[j]*Dzpx));
+                                hx[j] = K*(Dxxnx+Dyynx+Dzznx) + lambda*(px[j]*Dxnx+py[j]*Dxny+pz[j]*Dxnz - px[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpx+ny[j]*Dypx+nz[j]*Dzpx));
                                 hy[j] = K*(Dxxny+Dyyny+Dzzny) + lambda*(px[j]*Dynx+py[j]*Dyny+pz[j]*Dynz - py[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpy+ny[j]*Dypy+nz[j]*Dzpy));
                                 hz[j] = K*(Dxxnz+Dyynz+Dzznz) + lambda*(px[j]*Dznx+py[j]*Dzny+pz[j]*Dznz - pz[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpz+ny[j]*Dypz+nz[j]*Dzpz));
 
@@ -562,15 +563,11 @@ void writeBENDfiles(void)
 } // end writeBENDfiles
 
 // some little functions which go back and forth from point to index
-inline int pt(const int k,const  int l,const  int m)       //convert i,j,k to single index
+int pt(const int k,const  int l,const  int m)       //convert i,j,k to single index
 {
-        return (k*Ly*Lz+l*Lz+m);
+    return (k*Ly*Lz+l*Lz+m);
 }
 
-//int indextopt( int& i,  int& j,  int& k,const int index)       //convert i,j,k to single index
-//{
-//   int Nzjplusk = index%(Ny*Nz);
-//   i = (index - Nzjplusk)/(Ny*Nz);
 
 
 
