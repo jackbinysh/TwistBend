@@ -36,7 +36,7 @@ int pt(const int k,const  int l,const  int m);       //convert i,j,k to single i
 
 /* global variables */
 int n,LL;
-double K,C,lambda,theta,qh,U,dt;
+double K,C,lambda,thetah,qh,U,dt;
 double *nx,*ny,*nz,*px,*py,*pz;
 double *hx,*hy,*hz,*hpx,*hpy,*hpz;
 ofstream output,output2;
@@ -51,12 +51,12 @@ int main(int argc, char** argv)
     LL=Lx*Ly*Lz;     // total system size
     K = 0.04;       // elastic constant
     dt = 4*0.65;        // integration timestep
-    theta = M_PI/6.0;  // heliconical angle
+    thetah = M_PI/6.0;  // heliconical angle
     qh = 2.0*(2.0*M_PI/Lz);  // heliconical pitch
-    // lambda = (Kq/2) tan(2theta)
-    lambda = 0.5*K*qh*tan(2.0*theta);
-    // C = K sin^4(theta)/cos(2theta)
-    C = K*pow(sin(theta),4)/cos(2.0*theta);
+    // lambda = (Kq/2) tan(2thetah)
+    lambda = 0.5*K*qh*tan(2.0*thetah);
+    // C = K sin^4(thetah)/cos(2thetah)
+    C = K*pow(sin(thetah),4)/cos(2.0*thetah);
     U = C/9.0; // say
 
     int step=0;
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
     startconfig();
     cout << "starting simulation" << endl;
 
-#pragma omp parallel default(none) shared(nx,ny,nz,px,py,pz,hx,hy,hz,hpx,hpy,hpz, n, step, LL, K,C,lambda,theta,qh,U,dt, output,output2,vtk_director,vtk_polarisation,vtk_BEND,prefix,cout)
+#pragma omp parallel default(none) shared(nx,ny,nz,px,py,pz,hx,hy,hz,hpx,hpy,hpz, n, step, LL, K,C,lambda,thetah,qh,U,dt, output,output2,vtk_director,vtk_polarisation,vtk_BEND,prefix,cout)
     {
             while(n<=Nmax)
             {
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
                                     writeBENDfiles();      // output VTK files for use with ParaView
                                     step=0;
                             }
-                            step++;
+                            //step++;
                             n++;
                     }
                     update();
@@ -122,8 +122,8 @@ void startconfig(void)
         double k0,l0,m0;
 
         // define texture to simulate -- 0 or 1
-        HELICONICAL = 1; // standard heliconical texture
-        HOPF = 0; // Hopf texture
+        HELICONICAL = 0; // standard heliconical texture
+        HOPF = 1; // Hopf texture
         SQUARE = 0;
 
         // initial configuration
@@ -134,9 +134,9 @@ void startconfig(void)
         if (HELICONICAL == 1) {
                 for (j=0; j<LL; j++) {
                         // director field
-                        nx[j] = sin(theta)*cos(qh*m);
-                        ny[j] = sin(theta)*sin(qh*m);
-                        nz[j] = cos(theta);
+                        nx[j] = sin(thetah)*cos(qh*m);
+                        ny[j] = sin(thetah)*sin(qh*m);
+                        nz[j] = cos(thetah);
                         // polarisation
                         px[j] = -sin(qh*m);
                         py[j] = cos(qh*m);
@@ -169,9 +169,9 @@ void startconfig(void)
                 for (j=0; j<LL; j++) {
                         // default is heliconical texture
                         // director field
-                        nx[j] = -sin(theta)*cos(qh*m);
-                        ny[j] = -sin(theta)*sin(qh*m);
-                        nz[j] = -cos(theta);
+                        nx[j] = -sin(thetah)*cos(qh*m);
+                        ny[j] = -sin(thetah)*sin(qh*m);
+                        nz[j] = -cos(thetah);
                         // polarisation
                         px[j] = -sin(qh*m);
                         py[j] = cos(qh*m);
@@ -252,9 +252,9 @@ void startconfig(void)
                 for (j=0; j<LL; j++) {
                         // default is heliconical texture
                         // director field
-                        nx[j] = -sin(theta)*cos(qh*m);
-                        ny[j] = -sin(theta)*sin(qh*m);
-                        nz[j] = -cos(theta);
+                        nx[j] = -sin(thetah)*cos(qh*m);
+                        ny[j] = -sin(thetah)*sin(qh*m);
+                        nz[j] = -cos(thetah);
                         // polarisation
                         px[j] = -sin(qh*m);
                         py[j] = cos(qh*m);
