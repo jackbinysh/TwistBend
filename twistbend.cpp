@@ -16,8 +16,8 @@ using namespace std;
 
 // ============================================================
 
-const int Nmax = 50000;       // Number of timesteps
-const int stepskip = 1;   // print pitch and bend every stepskip timesteps
+const int Nmax = 2000;       // Number of timesteps
+const int stepskip = 100;   // print pitch and bend every stepskip timesteps
 const int Lx = 80;          // System size
 const int Ly = 80;          // System size
 const int Lz = 40;          // System size
@@ -122,8 +122,8 @@ void startconfig(void)
     double k0,l0,m0;
 
     // define texture to simulate -- 0 or 1
-    HELICONICAL = 1; // standard heliconical texture
-    HOPF = 0; // Hopf texture
+    HELICONICAL = 0; // standard heliconical texture
+    HOPF = 1; // Hopf texture
     SQUARE = 0;
 
     // initial configuration
@@ -161,28 +161,15 @@ void startconfig(void)
     // THIS ISNT CORRECT YET
     if (HOPF == 1) {
         int xup,xdwn,yup,ydwn,zup,zdwn;
-        // rho measures radius from centre of torus, theta is its polar coordiate. phi is the azimuthal, going around the torus.
-        double rho,theta,phi, RR, rr;    // variables for hopf texture
-        // RR is torus radius
-        RR = 30.0; qh = M_PI/RR;  // scale
+        double rho,theta,phi, rr, norm;    // variables for hopf texture
+        double RR = 16.0; qh = M_PI/RR;  // scale
 
         for (j=0; j<LL; j++) {
-            // default is heliconical texture
-            // director field
-            nx[j] = -sin(thetah)*cos(qh*m);
-            ny[j] = -sin(thetah)*sin(qh*m);
-            nz[j] = -cos(thetah);
-            // polarisation
-            px[j] = -sin(qh*m);
-            py[j] = cos(qh*m);
+            nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;
+            // cheap trick
+            px[j] = 0.0;
+            py[j] = 0.0;
             pz[j] = 0.0;
-            nx[j] = 0;
-            ny[j] = 0;
-            nz[j] = 1;
-            // polarisation
-            px[j] = 0;
-            py[j] = 0;
-            pz[j] = 0;
             // back to Hopf
             rr = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
             rho = sqrt((rr-RR)*(rr-RR)+(m-m0)*(m-m0));
@@ -202,10 +189,8 @@ void startconfig(void)
                 nx[j] = -sin(M_PI*rho/RR)*sin(phi+theta); // could also use -theta; they seem to be equivalent in energy
                 ny[j] = sin(M_PI*rho/RR)*cos(phi+theta); // could also use -theta
                 nz[j] = -cos(M_PI*rho/RR);
-                px[j] = 0.0;
-                py[j] = 0.0;
-                pz[j] = 0.0;
             }
+
 #if BC // normal anchoring along z
             if (m==0) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
             if (m==Lz-1) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
@@ -216,7 +201,6 @@ void startconfig(void)
             if (k==Lx) {l++; k=0;}
             if (l==Ly) {m++; l=0;}
         }
-        /*
         // set the polarisation to the bend of the director
         k=l=m=0;
         for (j=0; j<LL; j++) {
@@ -240,7 +224,7 @@ void startconfig(void)
                 py[j] = nx[j]*(ny[xup]-ny[xdwn])+ny[j]*(ny[yup]-ny[ydwn])+nz[j]*(ny[zup]-ny[zdwn]);
                 pz[j] = nx[j]*(nz[xup]-nz[xdwn])+ny[j]*(nz[yup]-nz[ydwn])+nz[j]*(nz[zup]-nz[zdwn]);
                 // normalise
-                double norm = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
+                norm = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
                 px[j] /= norm; py[j] /= norm; pz[j] /= norm;
             }
             // deal with the periodic boundaries
@@ -248,8 +232,6 @@ void startconfig(void)
             if (k==Lx) {l++; k=0;}
             if (l==Ly) {m++; l=0;}
         }
-        */
-
     } // end hopf
 
     // square
@@ -319,268 +301,264 @@ void update(void)
     /* Calculate derivatives, molecular field and the energy */
 
 #pragma omp for
-    for (k=0; k<Lx; k++) {
+    for ( m=0; m<Lz; m++) {
         for (l=0; l<Ly; l++) {
-            for ( m=0; m<Lz; m++) {
-                // where am I in the 1-D array?
-                const int j = pt(k,l,m);
-                // define neighbouring nodes in the 1-D array
-                xup=pt(k+1,l,m);
-                xdwn=pt(k-1,l,m);
-                yup=pt(k,l+1,m);
-                ydwn=pt(k,l-1,m);
-                zup=pt(k,l,m+1);
-                zdwn=pt(k,l,m-1);
-                // correct for periodic boundaries
-                if (k==0) {xdwn=pt(Lx-1,l,m);}
-                if (k==Lx-1) {xup=pt(0,l,m);}
-                if (l==0) {ydwn=pt(k,Ly-1,m);}
-                if (l==Ly-1) {yup=pt(k,0,m);}
-                if (m==0) {zdwn=pt(k,l,Lz-1);}
-                if (m==Lz-1) {zup=pt(k,l,0);}
+            for (k=0; k<Lx; k++) {
+                    // where am I in the 1-D array?
+                    int j = pt(k,l,m);
+                    // define neighbouring nodes in the 1-D array
+                    xup=pt(k+1,l,m);
+                    xdwn=pt(k-1,l,m);
+                    yup=pt(k,l+1,m);
+                    ydwn=pt(k,l-1,m);
+                    zup=pt(k,l,m+1);
+                    zdwn=pt(k,l,m-1);
+                    // correct for periodic boundaries
+                    if (k==0) {xdwn=pt(Lx-1,l,m);}
+                    if (k==Lx-1) {xup=pt(0,l,m);}
+                    if (l==0) {ydwn=pt(k,Ly-1,m);}
+                    if (l==Ly-1) {yup=pt(k,0,m);}
+                    if (m==0) {zdwn=pt(k,l,Lz-1);}
+                    if (m==Lz-1) {zup=pt(k,l,0);}
+
 #if BC // cheap fix for the Dirichlet boundary conditions
-                if (m==0) {xup=j; xdwn=j; yup=j; ydwn=j; zup=j; zdwn=j;}
-                if (m==Lz-1) {xup=j; xdwn=j; yup=j; ydwn=j; zup=j; zdwn=j;}
+                    if (m==0) {xup=j; xdwn=j; yup=j; ydwn=j; zup=j; zdwn=j;}
+                    if (m==Lz-1) {xup=j; xdwn=j; yup=j; ydwn=j; zup=j; zdwn=j;}
 #endif
-                //                                // calculate first order derivatives
-                Dxnx = (nx[xup]-nx[xdwn])/2.0;
-                Dynx = (nx[yup]-nx[ydwn])/2.0;
-                Dznx = (nx[zup]-nx[zdwn])/2.0;
+                    //                                // calculate first order derivatives
+                    Dxnx = (nx[xup]-nx[xdwn])/2.0;
+                    Dynx = (nx[yup]-nx[ydwn])/2.0;
+                    Dznx = (nx[zup]-nx[zdwn])/2.0;
 
-                Dxny = (ny[xup]-ny[xdwn])/2.0;
-                Dyny = (ny[yup]-ny[ydwn])/2.0;
-                Dzny = (ny[zup]-ny[zdwn])/2.0;
+                    Dxny = (ny[xup]-ny[xdwn])/2.0;
+                    Dyny = (ny[yup]-ny[ydwn])/2.0;
+                    Dzny = (ny[zup]-ny[zdwn])/2.0;
 
-                Dxnz = (nz[xup]-nz[xdwn])/2.0;
-                Dynz = (nz[yup]-nz[ydwn])/2.0;
-                Dznz = (nz[zup]-nz[zdwn])/2.0;
+                    Dxnz = (nz[xup]-nz[xdwn])/2.0;
+                    Dynz = (nz[yup]-nz[ydwn])/2.0;
+                    Dznz = (nz[zup]-nz[zdwn])/2.0;
 
-                Dxpx = (px[xup]-px[xdwn])/2.0;
-                Dypx = (px[yup]-px[ydwn])/2.0;
-                Dzpx = (px[zup]-px[zdwn])/2.0;
+                    Dxpx = (px[xup]-px[xdwn])/2.0;
+                    Dypx = (px[yup]-px[ydwn])/2.0;
+                    Dzpx = (px[zup]-px[zdwn])/2.0;
 
-                Dxpy = (py[xup]-py[xdwn])/2.0;
-                Dypy = (py[yup]-py[ydwn])/2.0;
-                Dzpy = (py[zup]-py[zdwn])/2.0;
+                    Dxpy = (py[xup]-py[xdwn])/2.0;
+                    Dypy = (py[yup]-py[ydwn])/2.0;
+                    Dzpy = (py[zup]-py[zdwn])/2.0;
 
-                Dxpz = (pz[xup]-pz[xdwn])/2.0;
-                Dypz = (pz[yup]-pz[ydwn])/2.0;
-                Dzpz = (pz[zup]-pz[zdwn])/2.0;
+                    Dxpz = (pz[xup]-pz[xdwn])/2.0;
+                    Dypz = (pz[yup]-pz[ydwn])/2.0;
+                    Dzpz = (pz[zup]-pz[zdwn])/2.0;
 
-                // calculate second order derivatives
-                Dxxnx = nx[xup]-2.0*nx[j]+nx[xdwn];
-                Dyynx = nx[yup]-2.0*nx[j]+nx[ydwn];
-                Dzznx = nx[zup]-2.0*nx[j]+nx[zdwn];
+                    // calculate second order derivatives
+                    Dxxnx = nx[xup]-2.0*nx[j]+nx[xdwn];
+                    Dyynx = nx[yup]-2.0*nx[j]+nx[ydwn];
+                    Dzznx = nx[zup]-2.0*nx[j]+nx[zdwn];
 
-                Dxxny = ny[xup]-2.0*ny[j]+ny[xdwn];
-                Dyyny = ny[yup]-2.0*ny[j]+ny[ydwn];
-                Dzzny = ny[zup]-2.0*ny[j]+ny[zdwn];
+                    Dxxny = ny[xup]-2.0*ny[j]+ny[xdwn];
+                    Dyyny = ny[yup]-2.0*ny[j]+ny[ydwn];
+                    Dzzny = ny[zup]-2.0*ny[j]+ny[zdwn];
 
-                Dxxnz = nz[xup]-2.0*nz[j]+nz[xdwn];
-                Dyynz = nz[yup]-2.0*nz[j]+nz[ydwn];
-                Dzznz = nz[zup]-2.0*nz[j]+nz[zdwn];
+                    Dxxnz = nz[xup]-2.0*nz[j]+nz[xdwn];
+                    Dyynz = nz[yup]-2.0*nz[j]+nz[ydwn];
+                    Dzznz = nz[zup]-2.0*nz[j]+nz[zdwn];
 
-                Dxxpx = px[xup]-2.0*px[j]+px[xdwn];
-                Dyypx = px[yup]-2.0*px[j]+px[ydwn];
-                Dzzpx = px[zup]-2.0*px[j]+px[zdwn];
+                    Dxxpx = px[xup]-2.0*px[j]+px[xdwn];
+                    Dyypx = px[yup]-2.0*px[j]+px[ydwn];
+                    Dzzpx = px[zup]-2.0*px[j]+px[zdwn];
 
-                Dxxpy = py[xup]-2.0*py[j]+py[xdwn];
-                Dyypy = py[yup]-2.0*py[j]+py[ydwn];
-                Dzzpy = py[zup]-2.0*py[j]+py[zdwn];
+                    Dxxpy = py[xup]-2.0*py[j]+py[xdwn];
+                    Dyypy = py[yup]-2.0*py[j]+py[ydwn];
+                    Dzzpy = py[zup]-2.0*py[j]+py[zdwn];
 
-                Dxxpz = pz[xup]-2.0*pz[j]+pz[xdwn];
-                Dyypz = pz[yup]-2.0*pz[j]+pz[ydwn];
-                Dzzpz = pz[zup]-2.0*pz[j]+pz[zdwn];
+                    Dxxpz = pz[xup]-2.0*pz[j]+pz[xdwn];
+                    Dyypz = pz[yup]-2.0*pz[j]+pz[ydwn];
+                    Dzzpz = pz[zup]-2.0*pz[j]+pz[zdwn];
 
-                // calculate molecular field
-                hx[j] = K*(Dxxnx+Dyynx+Dzznx) + lambda*(px[j]*Dxnx+py[j]*Dxny+pz[j]*Dxnz - px[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpx+ny[j]*Dypx+nz[j]*Dzpx));
-                hy[j] = K*(Dxxny+Dyyny+Dzzny) + lambda*(px[j]*Dynx+py[j]*Dyny+pz[j]*Dynz - py[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpy+ny[j]*Dypy+nz[j]*Dzpy));
-                hz[j] = K*(Dxxnz+Dyynz+Dzznz) + lambda*(px[j]*Dznx+py[j]*Dzny+pz[j]*Dznz - pz[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpz+ny[j]*Dypz+nz[j]*Dzpz));
+                    // calculate molecular field
+                    hx[j] = K*(Dxxnx+Dyynx+Dzznx) + lambda*(px[j]*Dxnx+py[j]*Dxny+pz[j]*Dxnz - px[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpx+ny[j]*Dypx+nz[j]*Dzpx));
+                    hy[j] = K*(Dxxny+Dyyny+Dzzny) + lambda*(px[j]*Dynx+py[j]*Dyny+pz[j]*Dynz - py[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpy+ny[j]*Dypy+nz[j]*Dzpy));
+                    hz[j] = K*(Dxxnz+Dyynz+Dzznz) + lambda*(px[j]*Dznx+py[j]*Dzny+pz[j]*Dznz - pz[j]*(Dxnx+Dyny+Dznz) - (nx[j]*Dxpz+ny[j]*Dypz+nz[j]*Dzpz));
 
-                hdotn = nx[j]*hx[j] + ny[j]*hy[j] + nz[j]*hz[j];
-                hx[j] -= nx[j]*hdotn;
-                hy[j] -= ny[j]*hdotn;
-                hz[j] -= nz[j]*hdotn;
+                    hdotn = nx[j]*hx[j] + ny[j]*hy[j] + nz[j]*hz[j];
+                    hx[j] -= nx[j]*hdotn;
+                    hy[j] -= ny[j]*hdotn;
+                    hz[j] -= nz[j]*hdotn;
 
-                // molecular field for polarisation
-                hpx[j] = C*(Dxxpx+Dyypx+Dzzpx) + U*(1.0-px[j]*px[j]-py[j]*py[j]-pz[j]*pz[j])*px[j] + lambda*(nx[j]*Dxnx+ny[j]*Dynx+nz[j]*Dznx);
-                hpy[j] = C*(Dxxpy+Dyypy+Dzzpy) + U*(1.0-px[j]*px[j]-py[j]*py[j]-pz[j]*pz[j])*py[j] + lambda*(nx[j]*Dxny+ny[j]*Dyny+nz[j]*Dzny);
-                hpz[j] = C*(Dxxpz+Dyypz+Dzzpz) + U*(1.0-px[j]*px[j]-py[j]*py[j]-pz[j]*pz[j])*pz[j] + lambda*(nx[j]*Dxnz+ny[j]*Dynz+nz[j]*Dznz);
+                    // molecular field for polarisation
+                    hpx[j] = C*(Dxxpx+Dyypx+Dzzpx) + U*(1.0-px[j]*px[j]-py[j]*py[j]-pz[j]*pz[j])*px[j] + lambda*(nx[j]*Dxnx+ny[j]*Dynx+nz[j]*Dznx);
+                    hpy[j] = C*(Dxxpy+Dyypy+Dzzpy) + U*(1.0-px[j]*px[j]-py[j]*py[j]-pz[j]*pz[j])*py[j] + lambda*(nx[j]*Dxny+ny[j]*Dyny+nz[j]*Dzny);
+                    hpz[j] = C*(Dxxpz+Dyypz+Dzzpz) + U*(1.0-px[j]*px[j]-py[j]*py[j]-pz[j]*pz[j])*pz[j] + lambda*(nx[j]*Dxnz+ny[j]*Dynz+nz[j]*Dznz);
 
 #if BC // Dirichlet boundary conditions along z
-                if (m==0) {hx[j] = 0.0; hy[j] = 0.0; hz[j] = 0.0;}
-                if (m==Lz-1) {hx[j] = 0.0; hy[j] = 0.0; hz[j] = 0.0;}
-                if (m==0) {hpx[j] = 0.0; hpy[j] = 0.0; hpz[j] = 0.0;}
-                if (m==Lz-1) {hpx[j] = 0.0; hpy[j] = 0.0; hpz[j] = 0.0;}
+                    if (m==0) {hx[j] = 0.0; hy[j] = 0.0; hz[j] = 0.0;}
+                    if (m==Lz-1) {hx[j] = 0.0; hy[j] = 0.0; hz[j] = 0.0;}
+                    if (m==0) {hpx[j] = 0.0; hpy[j] = 0.0; hpz[j] = 0.0;}
+                    if (m==Lz-1) {hpx[j] = 0.0; hpy[j] = 0.0; hpz[j] = 0.0;}
 #endif
+                }
             }
         }
-    }
-    // now do the update itself
+        // now do the update itself
 #pragma omp for
-    for (int j=0; j<Lx*Ly*Lz; j++)
+        for (int j=0; j<Lx*Ly*Lz; j++)
+        {
+            // director
+            nx[j] += hx[j]*dt;
+            ny[j] += hy[j]*dt;
+            nz[j] += hz[j]*dt;
+            //normalise
+            sqrtndotn = sqrt(nx[j]*nx[j] + ny[j]*ny[j] + nz[j]*nz[j]);
+            nx[j] /= sqrtndotn;
+            ny[j] /= sqrtndotn;
+            nz[j] /= sqrtndotn;
+            // polarisation
+            px[j] += hpx[j]*dt;
+            py[j] += hpy[j]*dt;
+            pz[j] += hpz[j]*dt;
+
+        }
+
+    } // end update
+
+    /**********************************************************************/
+    void writeVTKfiles(void)
     {
-        // director
-        nx[j] += hx[j]*dt;
-        ny[j] += hy[j]*dt;
-        nz[j] += hz[j]*dt;
-        //normalise
-        sqrtndotn = sqrt(nx[j]*nx[j] + ny[j]*ny[j] + nz[j]*nz[j]);
-        nx[j] /= sqrtndotn;
-        ny[j] /= sqrtndotn;
-        nz[j] /= sqrtndotn;
-        // polarisation
-        px[j] += hpx[j]*dt;
-        py[j] += hpy[j]*dt;
-        pz[j] += hpz[j]*dt;
+        int j;
 
-    }
+        sprintf(vtk_director,"%svtk_director_%d.vtk",prefix,n);
+        output.open(vtk_director);
+        output.precision(12);
 
-} // end update
+        // header data for the VTK file
+        output << "# vtk DataFile Version 3.0" << endl;
+        output << "Director Field" << endl;
+        output << "ASCII" << endl;
+        output << "DATASET STRUCTURED_POINTS" << endl;
+        output << "DIMENSIONS " << Lx << " " << Ly << " " << Lz << endl;
+        output << "ASPECT_RATIO 1 1 1" << endl;
+        output << "ORIGIN 0 0 0" << endl;
+        output << "POINT_DATA " << LL << endl;
+        output << "VECTORS n double" << endl; // output the director field
+        // currently using NORMALS could also use VECTORS
+        //  output << "LOOKUP_TABLE default" << endl;
 
-/**********************************************************************/
-void writeVTKfiles(void)
-{
-    int j;
+        sprintf(vtk_polarisation,"%svtk_polarisation_%d.vtk",prefix,n);
+        output2.open(vtk_polarisation);
+        output2.precision(12);
 
-    sprintf(vtk_director,"%svtk_director_%d.vtk",prefix,n);
-    output.open(vtk_director);
-    output.precision(12);
+        // header data for the VTK file
+        output2 << "# vtk DataFile Version 3.0" << endl;
+        output2 << "Polarisation Field" << endl;
+        output2 << "ASCII" << endl;
+        output2 << "DATASET STRUCTURED_POINTS" << endl;
+        output2 << "DIMENSIONS " << Lx << " " << Ly << " " << Lz << endl;
+        output2 << "ASPECT_RATIO 1 1 1" << endl;
+        output2 << "ORIGIN 0 0 0" << endl;
+        output2 << "POINT_DATA " << LL << endl;
+        output2 << "VECTORS p double" << endl; // output the polarisation field
+        // currently using NORMALS could also use VECTORS
+        //  output2 << "LOOKUP_TABLE default" << endl;
 
-    // header data for the VTK file
-    output << "# vtk DataFile Version 3.0" << endl;
-    output << "Director Field" << endl;
-    output << "ASCII" << endl;
-    output << "DATASET STRUCTURED_POINTS" << endl;
-    output << "DIMENSIONS " << Lx << " " << Ly << " " << Lz << endl;
-    output << "ASPECT_RATIO 1 1 1" << endl;
-    output << "ORIGIN 0 0 0" << endl;
-    output << "POINT_DATA " << LL << endl;
-    output << "VECTORS n double" << endl; // output the director field
-    // currently using NORMALS could also use VECTORS
-    //  output << "LOOKUP_TABLE default" << endl;
+        for (j=0; j<LL; j++) {
+            output << nx[j] << " " << ny[j] << " " << nz[j] << endl;
+            output2 << px[j] << " " << py[j] << " " << pz[j] << endl;
+        }
 
-    sprintf(vtk_polarisation,"%svtk_polarisation_%d.vtk",prefix,n);
-    output2.open(vtk_polarisation);
-    output2.precision(12);
+        output.close();
+        output2.close();
+    } // end writeVTKfiles
 
-    // header data for the VTK file
-    output2 << "# vtk DataFile Version 3.0" << endl;
-    output2 << "Polarisation Field" << endl;
-    output2 << "ASCII" << endl;
-    output2 << "DATASET STRUCTURED_POINTS" << endl;
-    output2 << "DIMENSIONS " << Lx << " " << Ly << " " << Lz << endl;
-    output2 << "ASPECT_RATIO 1 1 1" << endl;
-    output2 << "ORIGIN 0 0 0" << endl;
-    output2 << "POINT_DATA " << LL << endl;
-    output2 << "VECTORS p double" << endl; // output the polarisation field
-    // currently using NORMALS could also use VECTORS
-    //  output2 << "LOOKUP_TABLE default" << endl;
+    /**********************************************************************/
+    void writeBENDfiles(void)
+    {
+        int j,k,l,m;
+        int xup,xdwn,yup,ydwn,zup,zdwn;
+        double Dxnx,Dxny,Dxnz,Dynx,Dyny,Dynz,Dznx,Dzny,Dznz;
+        double bx,by,bz;
 
-    for (j=0; j<LL; j++) {
-        output << nx[j] << " " << ny[j] << " " << nz[j] << endl;
-        output2 << px[j] << " " << py[j] << " " << pz[j] << endl;
-    }
+        sprintf(vtk_BEND,"%svtk_BEND_%d.vtk",prefix,n);
+        output.open(vtk_BEND);
+        output.precision(12);
 
-    output.close();
-    output2.close();
-} // end writeVTKfiles
+        // header data for the VTK file
+        output << "# vtk DataFile Version 3.0" << endl;
+        output << "Bend Field" << endl;
+        output << "ASCII" << endl;
+        output << "DATASET STRUCTURED_POINTS" << endl;
+        output << "DIMENSIONS " << Lx << " " << Ly << " " << Lz << endl;
+        output << "ASPECT_RATIO 1 1 1" << endl;
+        output << "ORIGIN 0 0 0" << endl;
+        output << "POINT_DATA " << LL << endl;
+        output << "VECTORS b double" << endl; // output the bend vector field
+        // currently using NORMALS could also use VECTORS
+        //  output << "LOOKUP_TABLE default" << endl;
 
-/**********************************************************************/
-void writeBENDfiles(void)
-{
-    int j,k,l,m;
-    int xup,xdwn,yup,ydwn,zup,zdwn;
-    double Dxnx,Dxny,Dxnz,Dynx,Dyny,Dynz,Dznx,Dzny,Dznz;
-    double bx,by,bz;
+        k=l=m=0;
 
-    sprintf(vtk_BEND,"%svtk_BEND_%d.vtk",prefix,n);
-    output.open(vtk_BEND);
-    output.precision(12);
+        for (j=0;j<LL;j++) {
+            // define neighbouring nodes
+            xup=j+1; xdwn=j-1; yup=j+Lx; ydwn=j-Lx; zup=j+Lx*Ly; zdwn=j-Lx*Ly;
 
-    // header data for the VTK file
-    output << "# vtk DataFile Version 3.0" << endl;
-    output << "Bend Field" << endl;
-    output << "ASCII" << endl;
-    output << "DATASET STRUCTURED_POINTS" << endl;
-    output << "DIMENSIONS " << Lx << " " << Ly << " " << Lz << endl;
-    output << "ASPECT_RATIO 1 1 1" << endl;
-    output << "ORIGIN 0 0 0" << endl;
-    output << "POINT_DATA " << LL << endl;
-    output << "VECTORS b double" << endl; // output the bend vector field
-    // currently using NORMALS could also use VECTORS
-    //  output << "LOOKUP_TABLE default" << endl;
+            // correct for periodic boundaries
+            if (k==0) {xdwn+=Lx;}
+            if (k==Lx-1) {xup-=Lx;}
+            if (l==0) {ydwn+=Lx*Ly;}
+            if (l==Ly-1) {yup-=Lx*Ly;}
+            if (m==0) {zdwn+=LL;}
+            if (m==Lz-1) {zup-=LL;}
 
-    k=l=m=0;
-
-    for (j=0;j<LL;j++) {
-        // define neighbouring nodes
-        xup=j+1; xdwn=j-1; yup=j+Lx; ydwn=j-Lx; zup=j+Lx*Ly; zdwn=j-Lx*Ly;
-
-        // correct for periodic boundaries
-        if (k==0) {xdwn+=Lx;}
-        if (k==Lx-1) {xup-=Lx;}
-        if (l==0) {ydwn+=Lx*Ly;}
-        if (l==Ly-1) {yup-=Lx*Ly;}
-        if (m==0) {zdwn+=LL;}
-        if (m==Lz-1) {zup-=LL;}
-
-        // cheap fix
-        if (Lz==1) {zup=j; zdwn=j;}
+            // cheap fix
+            if (Lz==1) {zup=j; zdwn=j;}
 
 #if BC // use one-sided derivatives at boundaries
-        if (m==0) {zdwn=j+2*Lx*Ly;}
-        if (m==Lz-1) {zup=j-2*Lx*Ly;}
+            if (m==0) {zdwn=j+2*Lx*Ly;}
+            if (m==Lz-1) {zup=j-2*Lx*Ly;}
 #endif
 
-        // calculate first order derivatives
-        Dxnx = (nx[xup]-nx[xdwn])/2.0;
-        Dynx = (nx[yup]-nx[ydwn])/2.0;
-        Dznx = (nx[zup]-nx[zdwn])/2.0;
+            // calculate first order derivatives
+            Dxnx = (nx[xup]-nx[xdwn])/2.0;
+            Dynx = (nx[yup]-nx[ydwn])/2.0;
+            Dznx = (nx[zup]-nx[zdwn])/2.0;
 
-        Dxny = (ny[xup]-ny[xdwn])/2.0;
-        Dyny = (ny[yup]-ny[ydwn])/2.0;
-        Dzny = (ny[zup]-ny[zdwn])/2.0;
+            Dxny = (ny[xup]-ny[xdwn])/2.0;
+            Dyny = (ny[yup]-ny[ydwn])/2.0;
+            Dzny = (ny[zup]-ny[zdwn])/2.0;
 
-        Dxnz = (nz[xup]-nz[xdwn])/2.0;
-        Dynz = (nz[yup]-nz[ydwn])/2.0;
-        Dznz = (nz[zup]-nz[zdwn])/2.0;
+            Dxnz = (nz[xup]-nz[xdwn])/2.0;
+            Dynz = (nz[yup]-nz[ydwn])/2.0;
+            Dznz = (nz[zup]-nz[zdwn])/2.0;
 
 #if BC // one-sided derivates at boundaries
-        if (m==0) {
-            Dznx = (-3.0*nx[j]+4.0*nx[zup]-nx[zdwn])/2.0;
-            Dzny = (-3.0*ny[j]+4.0*ny[zup]-ny[zdwn])/2.0;
-            Dznz = (-3.0*nz[j]+4.0*nz[zup]-nz[zdwn])/2.0;
-        }
-        if (m==Lz-1) {
-            Dznx = (3.0*nx[j]-4.0*nx[zdwn]+nx[zup])/2.0;
-            Dzny = (3.0*ny[j]-4.0*ny[zdwn]+ny[zup])/2.0;
-            Dznz = (3.0*nz[j]-4.0*nz[zdwn]+nz[zup])/2.0;
-        }
+            if (m==0) {
+                Dznx = (-3.0*nx[j]+4.0*nx[zup]-nx[zdwn])/2.0;
+                Dzny = (-3.0*ny[j]+4.0*ny[zup]-ny[zdwn])/2.0;
+                Dznz = (-3.0*nz[j]+4.0*nz[zup]-nz[zdwn])/2.0;
+            }
+            if (m==Lz-1) {
+                Dznx = (3.0*nx[j]-4.0*nx[zdwn]+nx[zup])/2.0;
+                Dzny = (3.0*ny[j]-4.0*ny[zdwn]+ny[zup])/2.0;
+                Dznz = (3.0*nz[j]-4.0*nz[zdwn]+nz[zup])/2.0;
+            }
 #endif
 
-        // calculate bend
-        bx = nx[j]*Dxnx + ny[j]*Dynx + nz[j]*Dznx;
-        by = nx[j]*Dxny + ny[j]*Dyny + nz[j]*Dzny;
-        bz = nx[j]*Dxnz + ny[j]*Dynz + nz[j]*Dznz;
+            // calculate bend
+            bx = nx[j]*Dxnx + ny[j]*Dynx + nz[j]*Dznx;
+            by = nx[j]*Dxny + ny[j]*Dyny + nz[j]*Dzny;
+            bz = nx[j]*Dxnz + ny[j]*Dynz + nz[j]*Dznz;
 
-        output << bx << " " << by << " " << bz << endl;
+            output << bx << " " << by << " " << bz << endl;
 
-        // keep track of boundaries
-        k++;
-        if (k==Lx) {l++; k=0;}
-        if (l==Ly) {m++; l=0;}
+            // keep track of boundaries
+            k++;
+            if (k==Lx) {l++; k=0;}
+            if (l==Ly) {m++; l=0;}
+        }
+        output.close();
+    } // end writeBENDfiles
+
+    // some little functions which go back and forth from point to index
+    int pt(const int k,const  int l,const  int m)       //convert i,j,k to single index
+    {
+        return (m*Ly*Lx+l*Lx+k);
     }
-    output.close();
-} // end writeBENDfiles
-
-// some little functions which go back and forth from point to index
-int pt(const int k,const  int l,const  int m)       //convert i,j,k to single index
-{
-    return (k*Ly*Lz+l*Lz+m);
-}
-
-
-
-
-
