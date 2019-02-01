@@ -93,7 +93,7 @@ int file_read_ASCII( double *nx,double *ny, double *nz, double *px, double *py,d
     return 0;
 }
 
-int file_read( double *nx,double *ny, double *nz, double *px, double *py,double*pz)
+int file_read(double *nx,double *ny, double *nz, double *px, double *py,double* pz)
 {
     file_read_ASCII(nx,ny,nz,px,py,pz);
     return 0;

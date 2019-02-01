@@ -5,10 +5,10 @@ using namespace std;
 #define READINGWRITING_H
 
 
-int file_read(double n, double *nx,double *ny, double *nz, double *px, double *py,double*pz);
-int file_read_ASCII(double n, double *nx,double *ny, double *nz, double *px, double *py,double*pz);
+int file_read( double *nx,double *ny, double *nz, double *px, double *py,double*pz);
+int file_read_ASCII( double *nx,double *ny, double *nz, double *px, double *py,double*pz);
 
-void writeVTKfiles(void);
-void writeBENDfiles(void);
+void writeVTKfiles(double n,double *nx,double *ny,double *nz,double *px,double *py,double *pz) ;
+void writeBENDfiles(double n, double* nx,double* ny,double* nz) ;
 
 #endif //READINGWRITING_H

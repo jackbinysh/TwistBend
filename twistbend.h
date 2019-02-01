@@ -51,7 +51,7 @@ const char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 
 /* functions */
 void initialise(double* nx, double* ny,double* nz,double* px, double* py,double* pz, double* hx, double* hy,double* hz,double* hpx, double* hpy,double* hpz);
-void startconfig(double* nx, double* ny,double* nz,double* px, double* py,double* pz);
+void startconfig(int& n ,double* nx, double* ny,double* nz,double* px, double* py,double* pz);
 void update(double* nx, double* ny,double* nz,double* px, double* py,double* pz, double* hx, double* hy,double* hz,double* hpx, double* hpy,double* hpz);
 int pt(const int k,const  int l,const  int m);       //convert i,j,k to single index
 
