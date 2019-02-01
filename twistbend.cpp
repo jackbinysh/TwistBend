@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     startconfig(n, nx,ny,nz,px,py,pz);
     cout << "starting simulation" << endl;
 
-#pragma omp parallel default(none) shared(nx,ny,nz,px,py,pz,hx,hy,hz,hpx,hpy,hpz, n, step, LL, K,C,lambda,thetah,qh,U,dt, output,output2,vtk_director,vtk_polarisation,vtk_BEND,prefix,cout)
+#pragma omp parallel default(none) shared(nx,ny,nz,px,py,pz,hx,hy,hz,hpx,hpy,hpz,n,step,cout)
     {
         while(n<=Nmax)
         {
