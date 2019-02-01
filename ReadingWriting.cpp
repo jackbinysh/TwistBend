@@ -99,7 +99,7 @@ int file_read(double *nx,double *ny, double *nz, double *px, double *py,double* 
     return 0;
 }
 /**********************************************************************/
-void writeVTKfiles(double n,double *nx,double *ny,double *nz,double *px,double *py,double *pz) 
+void writeVTKfiles(int n,double *nx,double *ny,double *nz,double *px,double *py,double *pz) 
 {
     int j;
 
@@ -149,7 +149,7 @@ void writeVTKfiles(double n,double *nx,double *ny,double *nz,double *px,double *
 } // end writeVTKfiles
 
 /**********************************************************************/
-void writeBENDfiles(double n, double* nx,double* ny,double* nz) 
+void writeBENDfiles(int n, double* nx,double* ny,double* nz) 
 {
     ofstream output;
     char vtk_BEND[200];
