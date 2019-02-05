@@ -349,12 +349,7 @@ void update(double* nx, double* ny,double* nz,double* px, double* py,double* pz,
                 if (l==Ly-1) {yup=pt(k,0,m);}
                 if (m==0) {zdwn=pt(k,l,Lz-1);}
                 if (m==Lz-1) {zup=pt(k,l,0);}
-
-#if BC // cheap fix for the Dirichlet boundary conditions
-                if (m==0) {xup=j; xdwn=j; yup=j; ydwn=j; zup=j; zdwn=j;}
-                if (m==Lz-1) {xup=j; xdwn=j; yup=j; ydwn=j; zup=j; zdwn=j;}
-#endif
-                //                                // calculate first order derivatives
+                // calculate first order derivatives
                 Dxnx = (nx[xup]-nx[xdwn])/2.0;
                 Dynx = (nx[yup]-nx[ydwn])/2.0;
                 Dznx = (nx[zup]-nx[zdwn])/2.0;
