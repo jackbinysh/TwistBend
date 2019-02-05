@@ -120,7 +120,7 @@ void writeVTKfiles(const int n, const double *nx,const double *ny,const double *
     ofstream output,output2;
     sprintf(vtk_director,"%svtk_director_%d.vtk",prefix,n);
     output.open(vtk_director);
-    output.precision(24);
+    output.precision(12);
 
     // header data for the VTK file
     output << "# vtk DataFile Version 3.0" << endl;
@@ -137,7 +137,7 @@ void writeVTKfiles(const int n, const double *nx,const double *ny,const double *
 
     sprintf(vtk_polarisation,"%svtk_polarisation_%d.vtk",prefix,n);
     output2.open(vtk_polarisation);
-    output2.precision(24);
+    output2.precision(12);
 
     // header data for the VTK file
     output2 << "# vtk DataFile Version 3.0" << endl;
@@ -173,7 +173,7 @@ void writeBENDfiles(const int n, const double* nx,const double* ny,const double*
 
     sprintf(vtk_BEND,"%svtk_BEND_%d.vtk",prefix,n);
     output.open(vtk_BEND);
-    output.precision(24);
+    output.precision(12);
 
     // header data for the VTK file
     output << "# vtk DataFile Version 3.0" << endl;

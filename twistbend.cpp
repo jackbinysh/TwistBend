@@ -123,15 +123,17 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
         {
             int xup,xdwn,yup,ydwn,zup,zdwn;
             double rho,theta,phi, rr, norm;    // variables for hopf texture
-            double RR = 20.0;  // scale
+            double RR = 0.45*Lz;  // scale
             for (j=0; j<LL; j++)
             {
-                // uniform
-                nx[j] = 0.0;
-                ny[j] = 0.0;
-                nz[j] = 1.0;
-                px[j] = 0.0;
-                py[j] = 0.0;
+                // heliconical
+                // director field
+                nx[j] = sin(thetah)*cos(qh*m);
+                ny[j] = sin(thetah)*sin(qh*m);
+                nz[j] = cos(thetah);
+                // polarisation
+                px[j] = -sin(qh*m);
+                py[j] = cos(qh*m);
                 pz[j] = 0.0;
                 // back to Hopf
                 rr = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
@@ -152,6 +154,10 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                     nx[j] = -sin(M_PI*rho/RR)*sin(phi+theta); // could also use -theta; they seem to be equivalent in energy
                     ny[j] = sin(M_PI*rho/RR)*cos(phi+theta); // could also use -theta
                     nz[j] = -cos(M_PI*rho/RR);
+
+                    px[j] = 0;
+                    py[j] = 0;
+                    pz[j] = 0.0;
                 }
 
 #if BC // normal anchoring along z

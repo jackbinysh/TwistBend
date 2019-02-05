@@ -21,17 +21,17 @@ using namespace std;
 
 const int Nmax = 600000;       // Number of timesteps
 const int stepskip = 5000;   // print pitch and bend every stepskip timesteps
-const int Lx = 80;          // System size
-const int Ly = 80;          // System size
-const int Lz = 38;          // System size
+const int Lx = 100;          // System size
+const int Ly = 100;          // System size
+const int Lz = 50;          // System size
 
 
 // user defined settings
 const int    LL=Lx*Ly*Lz;     // total system size
 const double    K = 0.04;       // elastic constant
 const double dt = 0.65;        // integration timestep
-const double thetah = M_PI/10.0;  // heliconical angle
-const double qh = 2*(2.0*M_PI/Lz);  // heliconical pitch
+const double thetah = M_PI/11.0;  // heliconical angle
+const double qh = 2.0*(2.0*M_PI/Lz);  // heliconical pitch
 // lambda = (Kq/2) tan(2thetah)
 const double lambda = 0.5*K*qh*tan(2.0*thetah);
 // C = K sin^4(thetah)/cos(2thetah)
@@ -40,15 +40,15 @@ const double U = C/9.0; // say
 
 // do we want to read in a file? If so, whats its name?
 enum InitialisationType {FROM_FUNCTION,FROM_FILE};
-const InitialisationType InitialisationMethod = FROM_FILE;
+const InitialisationType InitialisationMethod = FROM_FUNCTION;
 const string director_filename="vtk_director_100000.vtk";
 const string polarisation_filename="vtk_polarisation_100000.vtk";
-const int starttime=100000;
+const int starttime=0;
 const char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 
 // ============================================================
 
-#define BC 1 // periodic (0) or fixed (1) boundary conditions -- currently only fixed along z
+#define BC 0 // periodic (0) or fixed (1) boundary conditions -- currently only fixed along z
 
 /* functions */
 void startconfig(int& n ,double* nx, double* ny,double* nz,double* px, double* py,double* pz);
