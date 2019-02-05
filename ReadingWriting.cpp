@@ -8,11 +8,24 @@ int file_read_ASCII( double *nx,double *ny, double *nz, double *px, double *py,d
     ifstream fin (director_filename.c_str());
     int i,j,k,n;
 
-    for(i=0;i<10;i++)
+    for(i=0;i<9;i++)
     {
         if(fin.good())
         {
             if(getline(fin,buff)) temp = buff;
+            size_t found =temp.find("DIMENSIONS");
+            if(found !=std::string::npos)
+            {
+                temp.replace(found,10, "");
+                int tempLx,tempLy,tempLz;
+                ss << temp;
+                ss >> tempLx >> tempLy >>tempLz ;
+               if((tempLx!= Lx) ||(tempLy!= Ly)||(tempLz!= Lz))
+               {
+                    cout << "Box dimensions dont match\n";
+                    return 1;
+               }
+            }
         }
         else
         {
@@ -51,7 +64,7 @@ int file_read_ASCII( double *nx,double *ny, double *nz, double *px, double *py,d
     string temp2,buff2;
     stringstream ss2;
     ifstream fin2 (polarisation_filename.c_str());
-    for(i=0;i<10;i++)
+    for(i=0;i<9;i++)
     {
         if(fin2.good())
         {
@@ -99,7 +112,7 @@ int file_read(double *nx,double *ny, double *nz, double *px, double *py,double* 
     return 0;
 }
 /**********************************************************************/
-void writeVTKfiles(int n,double *nx,double *ny,double *nz,double *px,double *py,double *pz) 
+void writeVTKfiles(const int n, const double *nx,const double *ny,const double *nz,const double *px,const double *py,const double *pz)
 {
     int j;
 
@@ -107,7 +120,7 @@ void writeVTKfiles(int n,double *nx,double *ny,double *nz,double *px,double *py,
     ofstream output,output2;
     sprintf(vtk_director,"%svtk_director_%d.vtk",prefix,n);
     output.open(vtk_director);
-    output.precision(12);
+    output.precision(24);
 
     // header data for the VTK file
     output << "# vtk DataFile Version 3.0" << endl;
@@ -124,7 +137,7 @@ void writeVTKfiles(int n,double *nx,double *ny,double *nz,double *px,double *py,
 
     sprintf(vtk_polarisation,"%svtk_polarisation_%d.vtk",prefix,n);
     output2.open(vtk_polarisation);
-    output2.precision(12);
+    output2.precision(24);
 
     // header data for the VTK file
     output2 << "# vtk DataFile Version 3.0" << endl;
@@ -149,7 +162,7 @@ void writeVTKfiles(int n,double *nx,double *ny,double *nz,double *px,double *py,
 } // end writeVTKfiles
 
 /**********************************************************************/
-void writeBENDfiles(int n, double* nx,double* ny,double* nz) 
+void writeBENDfiles(const int n, const double* nx,const double* ny,const double* nz)
 {
     ofstream output;
     char vtk_BEND[200];
@@ -160,7 +173,7 @@ void writeBENDfiles(int n, double* nx,double* ny,double* nz)
 
     sprintf(vtk_BEND,"%svtk_BEND_%d.vtk",prefix,n);
     output.open(vtk_BEND);
-    output.precision(12);
+    output.precision(24);
 
     // header data for the VTK file
     output << "# vtk DataFile Version 3.0" << endl;

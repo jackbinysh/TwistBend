@@ -12,16 +12,29 @@
 #include <iomanip>
 #include <complex>
 #include <string>
+#include <complex>
 #include <omp.h>
 
 using namespace std;
 
 int main(int argc, char** argv) 
 {
-    double *nx,*ny,*nz,*px,*py,*pz;
-    double *hx,*hy,*hz,*hpx,*hpy,*hpz;
-    cout << "initialising" << endl;
-    initialise(nx,ny,nz,px, py,pz, hx, hy,hz,hpx, hpy,hpz);
+
+    double* nx=new double[LL];
+    double* ny=new double[LL];
+    double* nz=new double[LL];
+
+    double* px=new double[LL];
+    double* py=new double[LL];
+    double* pz=new double[LL];
+
+    double* hx=new double[LL];
+    double* hy=new double[LL];
+    double* hz=new double[LL];
+
+    double* hpx=new double[LL];
+    double* hpy=new double[LL];
+    double* hpz=new double[LL];
 
     int n =0;
     int step=0;
@@ -54,227 +67,245 @@ int main(int argc, char** argv)
     }
 } // end main
 
-
-/**********************************************************************/
-void initialise(double* nx, double* ny,double* nz,double* px, double* py,double* pz, double* hx, double* hy,double* hz,double* hpx, double* hpy,double* hpz)
-{
-    nx=new double[LL];
-    ny=new double[LL];
-    nz=new double[LL];
-
-    px=new double[LL];
-    py=new double[LL];
-    pz=new double[LL];
-
-    hx=new double[LL];
-    hy=new double[LL];
-    hz=new double[LL];
-
-    hpx=new double[LL];
-    hpy=new double[LL];
-    hpz=new double[LL];
-}
-
 /**********************************************************************/
 void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* py,double* pz)
 {
     switch(InitialisationMethod)
     {
-        case FROM_FUNCTION:
+    case FROM_FUNCTION:
+    {
+        // k,l,m  are x,y,z indices, j is 1-d loop index.
+        int j,k,l,m;
+        int HELICONICAL,HOPF,SQUARE,HOPF2;
+        double k0,l0,m0;
+
+        // define texture to simulate -- 0 or 1
+        HELICONICAL = 0; // standard heliconical texture
+        HOPF = 1; // Hopf texture
+        HOPF2 = 0; // Hopf texture
+        SQUARE = 0;
+
+        // initial configuration
+        k=l=m=0;
+        k0 = Lx/2.0 - 0.5; l0 = Ly/2.0 - 0.5; m0 = Lz/2.0 - 0.5; // offset from the lattice points
+
+        // standard heliconical texture
+        if (HELICONICAL == 1)
+        {
+            for (j=0; j<LL; j++)
             {
-                // k,l,m  are x,y,z indices, j is 1-d loop index.
-                int j,k,l,m;
-                int HELICONICAL,HOPF,SQUARE;
-                double k0,l0,m0;
-
-                // define texture to simulate -- 0 or 1
-                HELICONICAL = 0; // standard heliconical texture
-                HOPF = 1; // Hopf texture
-                SQUARE = 0;
-
-                // initial configuration
-                k=l=m=0;
-                k0 = Lx/2.0 - 0.5; l0 = Ly/2.0 - 0.5; m0 = Lz/2.0 - 0.5; // offset from the lattice points
-
-                // standard heliconical texture
-                if (HELICONICAL == 1) 
+                // director field
+                nx[j] = sin(thetah)*cos(qh*m);
+                ny[j] = sin(thetah)*sin(qh*m);
+                nz[j] = cos(thetah);
+                // polarisation
+                px[j] = -sin(qh*m);
+                py[j] = cos(qh*m);
+                pz[j] = 0.0;
+                // perversion -- try this
+                //      if ((m>0.25*Lz)&&(m<0.75*Lz)) {
+                //if (m>0.5*Lz) {
+                //	ny[j] *= -1.0;
+                //py[j] *= -1.0;
+                // test
+                //	nx[j] *= -1.0;
+                //	nz[j] *= -1.0;
+                // }}
+                // deal with the periodic boundaries
+                k++;
+                if (k==Lx) {l++; k=0;}
+                if (l==Ly) {m++; l=0;}
+            }
+        }
+        // hopf texture
+        // THIS ISNT CORRECT YET
+        if (HOPF == 1)
+        {
+            int xup,xdwn,yup,ydwn,zup,zdwn;
+            double rho,theta,phi, rr, norm;    // variables for hopf texture
+            double RR = 20.0;  // scale
+            for (j=0; j<LL; j++)
+            {
+                // uniform
+                nx[j] = 0.0;
+                ny[j] = 0.0;
+                nz[j] = 1.0;
+                px[j] = 0.0;
+                py[j] = 0.0;
+                pz[j] = 0.0;
+                // back to Hopf
+                rr = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
+                rho = sqrt((rr-RR)*(rr-RR)+(m-m0)*(m-m0));
+                if (rho < RR)
                 {
-                    for (j=0; j<LL; j++)
-                    {
-                        // director field
-                        nx[j] = sin(thetah)*cos(qh*m);
-                        ny[j] = sin(thetah)*sin(qh*m);
-                        nz[j] = cos(thetah);
-                        // polarisation
-                        px[j] = -sin(qh*m);
-                        py[j] = cos(qh*m);
-                        pz[j] = 0.0;
-                        // perversion -- try this
-                        //      if ((m>0.25*Lz)&&(m<0.75*Lz)) {
-                        //if (m>0.5*Lz) {
-                        //	ny[j] *= -1.0;
-                        //py[j] *= -1.0;
-                        // test
-                        //	nx[j] *= -1.0;
-                        //	nz[j] *= -1.0;
-                        // }}
-                        // deal with the periodic boundaries
-                        k++;
-                        if (k==Lx) {l++; k=0;}
-                        if (l==Ly) {m++; l=0;}
-                    }
+                    theta = atan2(m-m0,rr-RR);
+                    if (theta < 0.0) {theta+=2.0*M_PI;} // put in the range [0,2pi)
+                    phi = atan2(l-l0,k-k0);
+                    if (phi < 0.0) {phi+=2.0*M_PI;} // put in the range [0,2pi)
+
+                    // cross-section looks like double twist and an escaped -1
+                    // for -theta these are ordered -1 inside and double twist outside; for +theta it is the other way around
+                    // Hopf invariant -1
+                    //	nx[j] = -sin(M_PI*rho/RR)*sin(phi-theta); // could also use -theta; they seem to be equivalent in energy
+                    //	ny[j] = sin(M_PI*rho/RR)*cos(phi-theta); // could also use -theta
+                    // Hopf invariant +1
+                    nx[j] = -sin(M_PI*rho/RR)*sin(phi+theta); // could also use -theta; they seem to be equivalent in energy
+                    ny[j] = sin(M_PI*rho/RR)*cos(phi+theta); // could also use -theta
+                    nz[j] = -cos(M_PI*rho/RR);
                 }
-                // hopf texture
-                // THIS ISNT CORRECT YET
-                if (HOPF == 1) 
-                {
-                    int xup,xdwn,yup,ydwn,zup,zdwn;
-                    double rho,theta,phi, rr, norm;    // variables for hopf texture
-                    double RR = 16.0;  // scale
-
-                    for (j=0; j<LL; j++)
-                    {
-
-                        // heliconical 
-                        // director field
-                        //  nx[j] = sin(thetah)*cos(qh*m);
-                        //  ny[j] = sin(thetah)*sin(qh*m);
-                        //  nz[j] = cos(thetah);
-                        //  // polarisation
-                        //  px[j] = -sin(qh*m);
-                        //  py[j] = cos(qh*m);
-                        //  pz[j] = 0.0;
-                        // uniform
-                        nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;
-                        px[j] = 0.0;
-                        py[j] = 0.0;
-                        pz[j] = 0.0;
-                        // back to Hopf
-                        rr = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
-                        rho = sqrt((rr-RR)*(rr-RR)+(m-m0)*(m-m0));
-
-                        if (rho < RR)
-                        {
-                            theta = atan2(m-m0,rr-RR);
-                            if (theta < 0.0) {theta+=2.0*M_PI;} // put in the range [0,2pi)
-                            phi = atan2(l-l0,k-k0);
-                            if (phi < 0.0) {phi+=2.0*M_PI;} // put in the range [0,2pi)
-
-                            // cross-section looks like double twist and an escaped -1
-                            // for -theta these are ordered -1 inside and double twist outside; for +theta it is the other way around
-                            // Hopf invariant -1
-                            //	nx[j] = -sin(M_PI*rho/RR)*sin(phi-theta); // could also use -theta; they seem to be equivalent in energy
-                            //	ny[j] = sin(M_PI*rho/RR)*cos(phi-theta); // could also use -theta
-                            // Hopf invariant +1
-                            nx[j] = -sin(M_PI*rho/RR)*sin(phi+theta); // could also use -theta; they seem to be equivalent in energy
-                            ny[j] = sin(M_PI*rho/RR)*cos(phi+theta); // could also use -theta
-                            nz[j] = -cos(M_PI*rho/RR);
-                        }
 
 #if BC // normal anchoring along z
-                        if (m==0) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
-                        if (m==Lz-1) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
+                if (m==0) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
+                if (m==Lz-1) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
 #endif
-
-                        // deal with the periodic boundaries
-                        k++;
-                        if (k==Lx) {l++; k=0;}
-                        if (l==Ly) {m++; l=0;}
-                    }
-                    // set the polarisation to the bend of the director
-                    k=l=m=0;
-                    for (j=0; j<LL; j++)
-                    {
-                        // hack here ??
-                        rr = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
-                        rho = sqrt((rr-RR)*(rr-RR)+(m-m0)*(m-m0));
-
-                        // define neighbouring nodes
-                        xup=j+1; xdwn=j-1; yup=j+Lx; ydwn=j-Lx; zup=j+Lx*Ly; zdwn=j-Lx*Ly;
-                        // correct for periodic boundaries
-                        if (k==0) {xdwn+=Lx;}
-                        if (k==Lx-1) {xup-=Lx;}
-                        if (l==0) {ydwn+=Lx*Ly;}
-                        if (l==Ly-1) {yup-=Lx*Ly;}
-                        if (m==0) {zdwn+=LL;}
-                        if (m==Lz-1) {zup-=LL;}
-
-                        if (rho < RR) {
-                            px[j] = nx[j]*(nx[xup]-nx[xdwn])+ny[j]*(nx[yup]-nx[ydwn])+nz[j]*(nx[zup]-nx[zdwn]);
-                            py[j] = nx[j]*(ny[xup]-ny[xdwn])+ny[j]*(ny[yup]-ny[ydwn])+nz[j]*(ny[zup]-ny[zdwn]);
-                            pz[j] = nx[j]*(nz[xup]-nz[xdwn])+ny[j]*(nz[yup]-nz[ydwn])+nz[j]*(nz[zup]-nz[zdwn]);
-                            // normalise
-                            norm = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
-                            px[j] /= norm; py[j] /= norm; pz[j] /= norm;
-                        }
-                        // deal with the periodic boundaries
-                        k++;
-                        if (k==Lx) {l++; k=0;}
-                        if (l==Ly) {m++; l=0;}
-                    }
-                } // end hopf
-                // square
-                if (SQUARE == 1)
-                {
-                    double r,R,phi;
-                    R = 0.8*Lx/2.0;
-
-                    for (j=0; j<LL; j++) {
-                        // default is heliconical texture
-                        // director field
-                        nx[j] = -sin(thetah)*cos(qh*m);
-                        ny[j] = -sin(thetah)*sin(qh*m);
-                        nz[j] = -cos(thetah);
-                        // polarisation
-                        px[j] = -sin(qh*m);
-                        py[j] = cos(qh*m);
-                        pz[j] = 0.0;
-                        // replace a cylinder with a twisted Skyrmion -- testing!
-                        r = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
-                        if (r<R) {
-                            phi = atan2(l-l0,k-k0);
-
-                            // nz is common to the twisted and untwisted cases
-                            nz[j] = cos(M_PI*r/R);
-
-                            // degree +1 , untwisted
-                            nx[j] = sin(M_PI*r/R)*sin(phi);
-                            ny[j] = -sin(M_PI*r/R)*cos(phi);
-                            // polarisation for +1 untwisted
-                            px[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*cos(phi)/r;
-                            py[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*sin(phi)/r;
-                            pz[j] = 0.0;
-
-                            // twisted
-                            //nx[j] = sin(M_PI*r/R)*sin(phi+2.0*M_PI*m/Lz);
-                            //ny[j] = -sin(M_PI*r/R)*cos(phi+2.0*M_PI*m/Lz);
-                            // polarisation for twisted
-                            //px[j] = cos(M_PI*r/R)*sin(2.0*M_PI*m/Lz)*sin(phi+2.0*M_PI*m/Lz)+((2.0*R/Lz)*cos(M_PI*r/R)-(R/(M_PI*r))*sin(M_PI*r/R)*cos(2.0*M_PI*m/Lz))*cos(phi+2.0*M_PI*m/Lz);
-                            //py[j] = -cos(M_PI*r/R)*sin(2.0*M_PI*m/Lz)*cos(phi+2.0*M_PI*m/Lz)+((2.0*R/Lz)*cos(M_PI*r/R)-(R/(M_PI*r))*sin(M_PI*r/R)*cos(2.0*M_PI*m/Lz))*sin(phi+2.0*M_PI*m/Lz);
-                            //pz[j] = -sin(M_PI*r/R)*sin(2.0*M_PI*m/Lz);
-
-                            // degree -1
-                            //	nx[j] = -sin(M_PI*r/R)*sin(phi);
-                            //	ny[j] = -sin(M_PI*r/R)*cos(phi);
-                        }
-                        // deal with the periodic boundaries
-                        k++;
-                        if (k==Lx) {l++; k=0;}
-                        if (l==Ly) {m++; l=0;}
-                    }
-                } // end square
-            break;
+                // deal with the periodic boundaries
+                k++;
+                if (k==Lx) {l++; k=0;}
+                if (l==Ly) {m++; l=0;}
             }
-        case FROM_FILE:
+            // set the polarisation to the bend of the director
+            k=l=m=0;
+            for (j=0; j<LL; j++)
+            {
+                // hack here ??
+                rr = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
+                rho = sqrt((rr-RR)*(rr-RR)+(m-m0)*(m-m0));
+                // define neighbouring nodes
+                xup=j+1; xdwn=j-1; yup=j+Lx; ydwn=j-Lx; zup=j+Lx*Ly; zdwn=j-Lx*Ly;
+                // correct for periodic boundaries
+                if (k==0) {xdwn+=Lx;}
+                if (k==Lx-1) {xup-=Lx;}
+                if (l==0) {ydwn+=Lx*Ly;}
+                if (l==Ly-1) {yup-=Lx*Ly;}
+                if (m==0) {zdwn+=LL;}
+                if (m==Lz-1) {zup-=LL;}
+                if (rho < RR) {
+                    px[j] = nx[j]*(nx[xup]-nx[xdwn])+ny[j]*(nx[yup]-nx[ydwn])+nz[j]*(nx[zup]-nx[zdwn]);
+                    py[j] = nx[j]*(ny[xup]-ny[xdwn])+ny[j]*(ny[yup]-ny[ydwn])+nz[j]*(ny[zup]-ny[zdwn]);
+                    pz[j] = nx[j]*(nz[xup]-nz[xdwn])+ny[j]*(nz[yup]-nz[ydwn])+nz[j]*(nz[zup]-nz[zdwn]);
+                    // normalise
+                    norm = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
+                    px[j] /= norm; py[j] /= norm; pz[j] /= norm;
+                }
+                // deal with the periodic boundaries
+                k++;
+                if (k==Lx) {l++; k=0;}
+                if (l==Ly) {m++; l=0;}
+            }
+        } // end hopf
+
+        if (HOPF2 == 1)
         {
-            cout << "Reading input file...\n";
-            if(file_read(nx,ny,nz,px,py,pz)){ cout << "somethings not right with the read...\n";}
-            // get the start time -  we hack this together as so:
-            // the filename looks like uv_plotxxx.vtk, we want the xxx. so we find the t, find the ., and grab everyting between
-            string number = director_filename.substr(director_filename.find('t')+1,director_filename.find('.')-director_filename.find('t')-1);
-            n = atoi(number.c_str());
-            break;
-        }
+            for (j=0; j<LL; j++)
+            {
+                complex<double> z1 =(double)(2)*(complex<double>(k,0)+complex<double>(0,l))/(double)(k*k+l*l+m*m+1);
+                complex<double> z2= (  (double)(2.0*m)+complex<double>(0,k*k+l*l+m*m-1) )/(double)(k*k+l*l+m*m+1);
+                complex<double> nxplusiny = (double)(2)*z1*conj(z2);
+                nx[j] = real(nxplusiny);
+                ny[j] = imag(nxplusiny);
+                nz[j] = abs(z1)*abs(z1)-abs(z2)*abs(z2);
+#if BC // normal anchoring along z
+                if (m==0) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
+                if (m==Lz-1) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
+#endif
+                // deal with the periodic boundaries
+                k++;
+                if (k==Lx) {l++; k=0;}
+                if (l==Ly) {m++; l=0;}
+            }
+            // set the polarisation to the bend of the director
+            k=l=m=0;
+            int xup,xdwn,yup,ydwn,zup,zdwn,norm;
+            for (j=0; j<LL; j++)
+            {
+                // define neighbouring nodes
+                xup=j+1; xdwn=j-1; yup=j+Lx; ydwn=j-Lx; zup=j+Lx*Ly; zdwn=j-Lx*Ly;
+                // correct for periodic boundaries
+                if (k==0) {xdwn+=Lx;}
+                if (k==Lx-1) {xup-=Lx;}
+                if (l==0) {ydwn+=Lx*Ly;}
+                if (l==Ly-1) {yup-=Lx*Ly;}
+                if (m==0) {zdwn+=LL;}
+                if (m==Lz-1) {zup-=LL;}
+
+                px[j] = nx[j]*(nx[xup]-nx[xdwn])+ny[j]*(nx[yup]-nx[ydwn])+nz[j]*(nx[zup]-nx[zdwn]);
+                py[j] = nx[j]*(ny[xup]-ny[xdwn])+ny[j]*(ny[yup]-ny[ydwn])+nz[j]*(ny[zup]-ny[zdwn]);
+                pz[j] = nx[j]*(nz[xup]-nz[xdwn])+ny[j]*(nz[yup]-nz[ydwn])+nz[j]*(nz[zup]-nz[zdwn]);
+                // normalise
+                norm = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
+                px[j] /= norm; py[j] /= norm; pz[j] /= norm;
+
+#if BC // normal anchoring along z, so make the polarization zero here
+                if (m==0) {px[j] = 0.0; py[j] = 0.0; pz[j] = 0.0;}
+                if (m==Lz-1) {px[j] = 0.0; py[j] = 0.0; pz[j] = 0.0;}
+#endif
+                // deal with the periodic boundaries
+                k++;
+                if (k==Lx) {l++; k=0;}
+                if (l==Ly) {m++; l=0;}
+            }
+        } // end hopf
+
+        // square
+        if (SQUARE == 1)
+        {
+            double r,R,phi;
+            R = 0.8*Lx/2.0;
+
+            for (j=0; j<LL; j++) {
+                // default is heliconical texture
+                // director field
+                nx[j] = -sin(thetah)*cos(qh*m);
+                ny[j] = -sin(thetah)*sin(qh*m);
+                nz[j] = -cos(thetah);
+                // polarisation
+                px[j] = -sin(qh*m);
+                py[j] = cos(qh*m);
+                pz[j] = 0.0;
+                // replace a cylinder with a twisted Skyrmion -- testing!
+                r = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
+                if (r<R) {
+                    phi = atan2(l-l0,k-k0);
+
+                    // nz is common to the twisted and untwisted cases
+                    nz[j] = cos(M_PI*r/R);
+
+                    // degree +1 , untwisted
+                    nx[j] = sin(M_PI*r/R)*sin(phi);
+                    ny[j] = -sin(M_PI*r/R)*cos(phi);
+                    // polarisation for +1 untwisted
+                    px[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*cos(phi)/r;
+                    py[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*sin(phi)/r;
+                    pz[j] = 0.0;
+
+                    // twisted
+                    //nx[j] = sin(M_PI*r/R)*sin(phi+2.0*M_PI*m/Lz);
+                    //ny[j] = -sin(M_PI*r/R)*cos(phi+2.0*M_PI*m/Lz);
+                    // polarisation for twisted
+                    //px[j] = cos(M_PI*r/R)*sin(2.0*M_PI*m/Lz)*sin(phi+2.0*M_PI*m/Lz)+((2.0*R/Lz)*cos(M_PI*r/R)-(R/(M_PI*r))*sin(M_PI*r/R)*cos(2.0*M_PI*m/Lz))*cos(phi+2.0*M_PI*m/Lz);
+                    //py[j] = -cos(M_PI*r/R)*sin(2.0*M_PI*m/Lz)*cos(phi+2.0*M_PI*m/Lz)+((2.0*R/Lz)*cos(M_PI*r/R)-(R/(M_PI*r))*sin(M_PI*r/R)*cos(2.0*M_PI*m/Lz))*sin(phi+2.0*M_PI*m/Lz);
+                    //pz[j] = -sin(M_PI*r/R)*sin(2.0*M_PI*m/Lz);
+
+                    // degree -1
+                    //	nx[j] = -sin(M_PI*r/R)*sin(phi);
+                    //	ny[j] = -sin(M_PI*r/R)*cos(phi);
+                }
+                // deal with the periodic boundaries
+                k++;
+                if (k==Lx) {l++; k=0;}
+                if (l==Ly) {m++; l=0;}
+            }
+        } // end square
+        break;
+    }
+    case FROM_FILE:
+    {
+        cout << "Reading input file...\n";
+        if(file_read(nx,ny,nz,px,py,pz)){ cout << "somethings not right with the read...\n";}
+        // get the start time -  we hack this together as so:
+        n = starttime;
+        break;
+    }
     }
 }
 

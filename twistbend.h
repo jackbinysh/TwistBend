@@ -19,8 +19,8 @@ using namespace std;
 
 // ============================================================
 
-const int Nmax = 100000;       // Number of timesteps
-const int stepskip = 1000;   // print pitch and bend every stepskip timesteps
+const int Nmax = 600000;       // Number of timesteps
+const int stepskip = 5000;   // print pitch and bend every stepskip timesteps
 const int Lx = 80;          // System size
 const int Ly = 80;          // System size
 const int Lz = 38;          // System size
@@ -30,8 +30,8 @@ const int Lz = 38;          // System size
 const int    LL=Lx*Ly*Lz;     // total system size
 const double    K = 0.04;       // elastic constant
 const double dt = 0.65;        // integration timestep
-const double thetah = M_PI/12.0;  // heliconical angle
-const double qh = 2.5*(2.0*M_PI/Lz);  // heliconical pitch
+const double thetah = M_PI/10.0;  // heliconical angle
+const double qh = 2*(2.0*M_PI/Lz);  // heliconical pitch
 // lambda = (Kq/2) tan(2thetah)
 const double lambda = 0.5*K*qh*tan(2.0*thetah);
 // C = K sin^4(thetah)/cos(2thetah)
@@ -41,8 +41,9 @@ const double U = C/9.0; // say
 // do we want to read in a file? If so, whats its name?
 enum InitialisationType {FROM_FUNCTION,FROM_FILE};
 const InitialisationType InitialisationMethod = FROM_FILE;
-const string director_filename="";
-const string polarisation_filename="";
+const string director_filename="vtk_director_100000.vtk";
+const string polarisation_filename="vtk_polarisation_100000.vtk";
+const int starttime=100000;
 const char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 
 // ============================================================
@@ -50,7 +51,6 @@ const char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 #define BC 1 // periodic (0) or fixed (1) boundary conditions -- currently only fixed along z
 
 /* functions */
-void initialise(double* nx, double* ny,double* nz,double* px, double* py,double* pz, double* hx, double* hy,double* hz,double* hpx, double* hpy,double* hpz);
 void startconfig(int& n ,double* nx, double* ny,double* nz,double* px, double* py,double* pz);
 void update(double* nx, double* ny,double* nz,double* px, double* py,double* pz, double* hx, double* hy,double* hz,double* hpx, double* hpy,double* hpz);
 int pt(const int k,const  int l,const  int m);       //convert i,j,k to single index

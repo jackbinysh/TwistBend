@@ -8,7 +8,7 @@ using namespace std;
 int file_read( double *nx,double *ny, double *nz, double *px, double *py,double*pz);
 int file_read_ASCII( double *nx,double *ny, double *nz, double *px, double *py,double*pz);
 
-void writeVTKfiles(int n,double *nx,double *ny,double *nz,double *px,double *py,double *pz) ;
-void writeBENDfiles(int n, double* nx,double* ny,double* nz) ;
+void writeVTKfiles(const int n, const double *nx, const double *ny, const double *nz, const double *px, const double *py, const double *pz) ;
+void writeBENDfiles(const int n, const double *nx, const double *ny, const double *nz) ;
 
 #endif //READINGWRITING_H
