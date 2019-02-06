@@ -124,6 +124,7 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
             int xup,xdwn,yup,ydwn,zup,zdwn;
             double rho,theta,phi, rr, norm;    // variables for hopf texture
             double RR = 0.45*Lz;  // scale
+            double RR2 = 0.25*Lz;  // scale
             for (j=0; j<LL; j++)
             {
                 // heliconical
@@ -138,7 +139,7 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                 // back to Hopf
                 rr = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
                 rho = sqrt((rr-RR)*(rr-RR)+(m-m0)*(m-m0));
-                if (rho < RR)
+                if (rho < RR2)
                 {
                     theta = atan2(m-m0,rr-RR);
                     if (theta < 0.0) {theta+=2.0*M_PI;} // put in the range [0,2pi)
@@ -151,9 +152,9 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                     //	nx[j] = -sin(M_PI*rho/RR)*sin(phi-theta); // could also use -theta; they seem to be equivalent in energy
                     //	ny[j] = sin(M_PI*rho/RR)*cos(phi-theta); // could also use -theta
                     // Hopf invariant +1
-                    nx[j] = -sin(M_PI*rho/RR)*sin(phi+theta); // could also use -theta; they seem to be equivalent in energy
-                    ny[j] = sin(M_PI*rho/RR)*cos(phi+theta); // could also use -theta
-                    nz[j] = -cos(M_PI*rho/RR);
+                    nx[j] = -sin(M_PI*rho/RR2)*sin(phi+theta); // could also use -theta; they seem to be equivalent in energy
+                    ny[j] = sin(M_PI*rho/RR2)*cos(phi+theta); // could also use -theta
+                    nz[j] = -cos(M_PI*rho/RR2);
 
                     px[j] = 0;
                     py[j] = 0;
@@ -185,7 +186,7 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                 if (l==Ly-1) {yup-=Lx*Ly;}
                 if (m==0) {zdwn+=LL;}
                 if (m==Lz-1) {zup-=LL;}
-                if (rho < RR) {
+                if (rho < RR2) {
                     px[j] = nx[j]*(nx[xup]-nx[xdwn])+ny[j]*(nx[yup]-nx[ydwn])+nz[j]*(nx[zup]-nx[zdwn]);
                     py[j] = nx[j]*(ny[xup]-ny[xdwn])+ny[j]*(ny[yup]-ny[ydwn])+nz[j]*(ny[zup]-ny[zdwn]);
                     pz[j] = nx[j]*(nz[xup]-nz[xdwn])+ny[j]*(nz[yup]-nz[ydwn])+nz[j]*(nz[zup]-nz[zdwn]);
