@@ -19,8 +19,8 @@ using namespace std;
 
 // ============================================================
 
-const int Nmax = 600000;       // Number of timesteps
-const int stepskip = 5000;   // print pitch and bend every stepskip timesteps
+const int Nmax = 300000;       // Number of timesteps
+const int stepskip = 1000;   // print pitch and bend every stepskip timesteps
 const int Lx = 100;          // System size
 const int Ly = 100;          // System size
 const int Lz = 50;          // System size
@@ -53,6 +53,7 @@ const char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 /* functions */
 void startconfig(int& n ,double* nx, double* ny,double* nz,double* px, double* py,double* pz);
 void update(double* nx, double* ny,double* nz,double* px, double* py,double* pz, double* hx, double* hy,double* hz,double* hpx, double* hpy,double* hpz);
+void computeBendAndCurlofCirculation(const int n, const double* nx,const double* ny,const double* nz, double* bx, double* by, double* bz, double* bmag, double* tx, double* ty, double* tz);
 int pt(const int k,const  int l,const  int m);       //convert i,j,k to single index
 
 #endif //twistbend_H
