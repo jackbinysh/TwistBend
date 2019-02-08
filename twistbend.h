@@ -3,6 +3,7 @@
 /*         created November 2018, Gareth Alexander            */
 /**************************************************************/
 
+#include "TriCubicInterpolator.h"
 #include <iostream>
 #include <fstream>
 #include <math.h>
@@ -10,7 +11,11 @@
 #include <iomanip>
 #include <complex>
 #include <string>
+// for parallelisation
 #include <omp.h>
+// for the minimiser
+#include <gsl/gsl_multimin.h>
+#include <gsl/gsl_vector.h>
 
 using namespace std;
 
@@ -25,6 +30,8 @@ const int Lx = 100;          // System size
 const int Ly = 100;          // System size
 const int Lz = 50;          // System size
 
+
+#define BC 0 // periodic (0) or fixed (1) boundary conditions -- currently only fixed along z
 
 // user defined settings
 const int    LL=Lx*Ly*Lz;     // total system size
@@ -47,13 +54,34 @@ const int starttime=0;
 const char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 
 // ============================================================
+// structures which are used in the code
+struct parameters
+{
+	gsl_vector *v,*f,*b;
+    likely::TriCubicInterpolator* ucvmag;
+};
 
-#define BC 0 // periodic (0) or fixed (1) boundary conditions -- currently only fixed along z
+struct knotpoint
+{
+    double xcoord;   //position vector x coord
+    double ycoord;   //position vector y coord
+    double zcoord;   //position vector z coord
+};
+struct knotcurve
+{
+    std::vector<knotpoint> knotcurve; // the actual data of the curve
+    // global data for the knot component
+};
 
 /* functions */
 void startconfig(int& n ,double* nx, double* ny,double* nz,double* px, double* py,double* pz);
 void update(double* nx, double* ny,double* nz,double* px, double* py,double* pz, double* hx, double* hy,double* hz,double* hpx, double* hpy,double* hpz);
 void computeBendAndCurlofCirculation(const int n, const double* nx,const double* ny,const double* nz, double* bx, double* by, double* bz, double* bmag, double* tx, double* ty, double* tz);
+void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcurve>& knotcurves,double n, gsl_multimin_fminimizer* minimizerstate);
+double my_minimisation_function(const gsl_vector* minimum, void* params);
 int pt(const int k,const  int l,const  int m);       //convert i,j,k to single index
+double x(int k);
+double y(int l);
+double z(int m);
 
 #endif //twistbend_H

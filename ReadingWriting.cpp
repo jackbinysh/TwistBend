@@ -149,3 +149,32 @@ void writeVTKfiles(const int n, const double *nx,const double *ny,const double *
     }
     output.close();
 } // end writeVTKfiles
+
+void print_knot( double t, vector<knotcurve>& knotcurves)
+{
+    for( int c=0; c < (knotcurves.size()) ; c++)
+    {
+
+        /***Write values to file*******/
+        stringstream ss;
+        ss.str("");
+        ss.clear();
+
+        ss << "bendzeros" << c << "_" << t <<  ".vtk";
+        ofstream knotout (ss.str().c_str());
+
+        int i;
+        int n = knotcurves[c].knotcurve.size();
+
+        knotout << "# vtk DataFile Version 3.0\nKnot\nASCII\nDATASET UNSTRUCTURED_GRID\n";
+        knotout << "POINTS " << n << " float\n";
+
+        for(i=0; i<n; i++)
+        {
+            knotout << knotcurves[c].knotcurve[i].xcoord << ' ' << knotcurves[c].knotcurve[i].ycoord << ' ' << knotcurves[c].knotcurve[i].zcoord << '\n';
+        }
+
+        knotout.close();
+    }
+}
+
