@@ -174,6 +174,41 @@ void print_knot( double t, vector<knotcurve>& knotcurves)
             knotout << knotcurves[c].knotcurve[i].xcoord << ' ' << knotcurves[c].knotcurve[i].ycoord << ' ' << knotcurves[c].knotcurve[i].zcoord << '\n';
         }
 
+        knotout << "\n\nCELLS " << n << ' ' << 3*n << '\n';
+
+        for(i=0; i<n; i++)
+        {
+            knotout << 2 << ' ' << i << ' ' << (i+1)%n << '\n';
+        }
+
+        knotout << "\n\nCELL_TYPES " << n << '\n';
+
+        for(i=0; i<n; i++)
+        {
+            knotout << "3\n";
+        }
+
+        knotout << "\n\nPOINT_DATA " << n << "\n\n";
+
+        knotout << "\nVECTORS t float\n";
+        for(i=0; i<n; i++)
+        {
+            knotout << knotcurves[c].knotcurve[i].tx << ' ' << knotcurves[c].knotcurve[i].ty << ' ' << knotcurves[c].knotcurve[i].tz << '\n';
+        }
+
+        knotout << "\nVECTORS gradmagb float\n";
+        for(i=0; i<n; i++)
+        {
+            knotout << knotcurves[c].knotcurve[i].gradmagbx << ' ' << knotcurves[c].knotcurve[i].gradmagby << ' ' << knotcurves[c].knotcurve[i].gradmagbz << '\n';
+        }
+
+        knotout << "\nVECTORS gradmagbperp float\n";
+        for(i=0; i<n; i++)
+        {
+            knotout << knotcurves[c].knotcurve[i].gradmagbperpx << ' ' << knotcurves[c].knotcurve[i].gradmagbperpy << ' ' << knotcurves[c].knotcurve[i].gradmagbperpz << '\n';
+        }
+
+
         knotout.close();
     }
 }

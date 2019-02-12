@@ -49,7 +49,6 @@ namespace likely {
         if((i2 %= _n2) < 0) i2 += _n2;
         if((i3 %= _n3) < 0) i3 += _n3;
         return i1 + _n1*(i2 + _n2*i3);
-       // return i1*_n2*_n3+_n3*i2+i3;
 	}
 
 } // likely

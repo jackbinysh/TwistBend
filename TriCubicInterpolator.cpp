@@ -24,12 +24,7 @@ double local::TriCubicInterpolator::operator()(double x, double y, double z) con
     // https://svn.blender.org/svnroot/bf-blender/branches/volume25/source/blender/blenlib/intern/voxel.c
     
     // Map x,y,z to a point dx,dy,dz in the cube [0,n1) x [0,n2) x [0,n3)
-    // assuming the grid is centre aligned, ie we have the relation
-    // x(i) = (i+((Nx-1)/2))*spacing
-    //double dx(std::fmod(x/_spacing,_n1)), dy(std::fmod(y/_spacing,_n2)), dz(std::fmod(z/_spacing,_n3));
-    double dx  = (x/_spacing)+(_n1 -1)/2;
-    double dy  = (y/_spacing)+(_n2 -1)/2;
-    double dz  = (z/_spacing)+(_n3 -1)/2;
+    double dx(std::fmod(x/_spacing,_n1)), dy(std::fmod(y/_spacing,_n2)), dz(std::fmod(z/_spacing,_n3));
     if(dx < 0) dx += _n1;
     if(dy < 0) dy += _n2;
     if(dz < 0) dz += _n3;

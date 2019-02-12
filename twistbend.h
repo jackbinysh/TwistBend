@@ -25,7 +25,7 @@ using namespace std;
 // ============================================================
 
 const int Nmax = 300000;       // Number of timesteps
-const int stepskip = 1000;   // print pitch and bend every stepskip timesteps
+const int stepskip = 5000;   // print pitch and bend every stepskip timesteps
 const int Lx = 100;          // System size
 const int Ly = 100;          // System size
 const int Lz = 50;          // System size
@@ -66,6 +66,19 @@ struct knotpoint
     double xcoord;   //position vector x coord
     double ycoord;   //position vector y coord
     double zcoord;   //position vector z coord
+
+    double tx;   //position vector x coord
+    double ty;   //position vector y coord
+    double tz;   //position vector z coord
+
+    double gradmagbx;   //position vector x coord
+    double gradmagby;   //position vector x coord
+    double gradmagbz;   //position vector x coord
+
+    double gradmagbperpx;   //position vector x coord
+    double gradmagbperpy;   //position vector x coord
+    double gradmagbperpz;   //position vector x coord
+
 };
 struct knotcurve
 {
@@ -76,12 +89,9 @@ struct knotcurve
 /* functions */
 void startconfig(int& n ,double* nx, double* ny,double* nz,double* px, double* py,double* pz);
 void update(double* nx, double* ny,double* nz,double* px, double* py,double* pz, double* hx, double* hy,double* hz,double* hpx, double* hpy,double* hpz);
-void computeBendAndCurlofCirculation(const int n, const double* nx,const double* ny,const double* nz, double* bx, double* by, double* bz, double* bmag, double* tx, double* ty, double* tz);
+void computeBendAndCurlofCirculation(const int n, const double* nx,const double* ny,const double* nz, double* bx, double* by, double* bz, double* bmag, const double* px, const double* py, const double* pz, double* pmag, double* tx, double* ty, double* tz);
 void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcurve>& knotcurves,double n, gsl_multimin_fminimizer* minimizerstate);
 double my_minimisation_function(const gsl_vector* minimum, void* params);
 int pt(const int k,const  int l,const  int m);       //convert i,j,k to single index
-double x(int k);
-double y(int l);
-double z(int m);
 
 #endif //twistbend_H
