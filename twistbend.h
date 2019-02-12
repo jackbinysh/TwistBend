@@ -25,7 +25,9 @@ using namespace std;
 // ============================================================
 
 const int Nmax = 300000;       // Number of timesteps
-const int stepskip = 5000;   // print pitch and bend every stepskip timesteps
+const int vtkstepskip = 5000;   // print pitch and bend every stepskip timesteps
+const int curvestepskip = 500;   // print pitch and bend every stepskip timesteps
+const int curvestarttime = 3000;   // print pitch and bend every stepskip timesteps
 const int Lx = 120;          // System size
 const int Ly = 120;          // System size
 const int Lz = 60;          // System size

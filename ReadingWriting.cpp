@@ -160,7 +160,7 @@ void print_knot( double t, vector<knotcurve>& knotcurves)
         ss.str("");
         ss.clear();
 
-        ss << "bendzeros" << c << "_" << t <<  ".vtk";
+        ss << "vtk_bendzeros" << c << "_" << t <<  ".vtk";
         ofstream knotout (ss.str().c_str());
 
         int i;

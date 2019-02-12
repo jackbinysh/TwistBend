@@ -58,11 +58,10 @@ int main(int argc, char** argv)
     minimizerstate = gsl_multimin_fminimizer_alloc (Type,2);
 
     int n =0;
-    int step=0;
     startconfig(n, nx,ny,nz,px,py,pz);
     cout << "starting simulation" << endl;
 
-#pragma omp parallel default(none) shared(nx,ny,nz,px,py,pz,pmag, hx,hy,hz,hpx,hpy,hpz, bx,by,bz,bmag, tx,ty,tz, knotcurves,minimizerstate, Type, n,step,cout)
+#pragma omp parallel default(none) shared(nx,ny,nz,px,py,pz,pmag, hx,hy,hz,hpx,hpy,hpz, bx,by,bz,bmag, tx,ty,tz, knotcurves,minimizerstate, Type, n,cout)
     {
         while(n<=Nmax)
         {
@@ -73,17 +72,21 @@ int main(int argc, char** argv)
                     cout << "timestep " << n << endl;
                 }
 
-                if (step==stepskip)
+                if (n%vtkstepskip==0)
                 {
                     cout << "writing VTK files at timestep " << n << endl;
                     computeBendAndCurlofCirculation(n,nx,ny,nz,bx,by,bz,bmag,px,py,pz,pmag, tx,ty,tz);
-                    FindBendZeros(bmag,tx, ty,tz,knotcurves,n,minimizerstate);
                     writeVTKfiles(n,nx,ny,nz,px,py,pz,bx,by,bz,tx,ty,tz);       // output VTK files for use with ParaView
+
+                }
+                if ((n>=curvestarttime) &&(n%curvestepskip==0))
+                {
+                    cout << "writing the bend zeros at timestep " << n << endl;
+                    computeBendAndCurlofCirculation(n,nx,ny,nz,bx,by,bz,bmag,px,py,pz,pmag, tx,ty,tz);
+                    FindBendZeros(bmag,tx, ty,tz,knotcurves,n,minimizerstate);
                     print_knot(n,knotcurves);
 
-                    step=0;
                 }
-                step++;
                 n++;
             }
             update(nx,ny,nz,px, py,pz, hx, hy,hz,hpx, hpy,hpz);
@@ -979,29 +982,6 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
                 }
             }
         }
-    // temp
-    char vtk_data[200];
-    sprintf(vtk_data,"marked_%d.vtk",c);
-    ofstream Bout (vtk_data);
-    Bout << "# vtk DataFile Version 3.0\nKnot\nASCII\nDATASET STRUCTURED_POINTS\n";
-    Bout << "DIMENSIONS " << Lx << ' ' << Ly << ' ' << Lz << '\n';
-    Bout << "ORIGIN 0 0 0" << '\n';
-    Bout << "SPACING " << 1 << ' ' << 1 << ' ' << 1 << '\n';
-    Bout << "POINT_DATA " << LL << '\n';
-    Bout << "SCALARS marked float\nLOOKUP_TABLE default\n";
-    for(int k=0; k<Lz; k++)
-    {
-        for(int j=0; j<Ly; j++)
-        {
-            for(int i=0; i<Lx; i++)
-            {
-                int n = pt(i,j,k);
-                Bout << marked[n] << '\n';
-            }
-        }
-    }
-    Bout.close();
-    //
         c++;
     }
 }
