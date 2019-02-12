@@ -26,9 +26,9 @@ using namespace std;
 
 const int Nmax = 300000;       // Number of timesteps
 const int stepskip = 5000;   // print pitch and bend every stepskip timesteps
-const int Lx = 100;          // System size
-const int Ly = 100;          // System size
-const int Lz = 50;          // System size
+const int Lx = 120;          // System size
+const int Ly = 120;          // System size
+const int Lz = 60;          // System size
 
 
 #define BC 0 // periodic (0) or fixed (1) boundary conditions -- currently only fixed along z
@@ -57,7 +57,7 @@ const char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 // structures which are used in the code
 struct parameters
 {
-	gsl_vector *v,*f,*b;
+	gsl_vector *mypt,*t,*e1,*e2;
     likely::TriCubicInterpolator* ucvmag;
 };
 

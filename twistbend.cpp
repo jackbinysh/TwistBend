@@ -77,7 +77,7 @@ int main(int argc, char** argv)
                 {
                     cout << "writing VTK files at timestep " << n << endl;
                     computeBendAndCurlofCirculation(n,nx,ny,nz,bx,by,bz,bmag,px,py,pz,pmag, tx,ty,tz);
-                    FindBendZeros(pmag,tx, ty,tz,knotcurves,n,minimizerstate);
+                    FindBendZeros(bmag,tx, ty,tz,knotcurves,n,minimizerstate);
                     writeVTKfiles(n,nx,ny,nz,px,py,pz,bx,by,bz,tx,ty,tz);       // output VTK files for use with ParaView
                     print_knot(n,knotcurves);
 
@@ -685,7 +685,7 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
 
 
     // settings
-    double threshold =1.2;
+    double threshold =0.05;
 
 
     int c =0;
@@ -766,38 +766,44 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
                 tys = tys/norm;
                 tzs = tzs/norm; 
                 // walk along the tangent to the bend zero some distance
-                double walkstepsize = 1;
-                double testx = knotcurves[c].knotcurve[s-1].xcoord + walkstepsize*txs;
-                double testy = knotcurves[c].knotcurve[s-1].ycoord + walkstepsize*tys;
-                double testz = knotcurves[c].knotcurve[s-1].zcoord + walkstepsize*tzs;
+              //  double walkstepsize = 1.9; // a cubic diagonal is at most sqrt(3)=1.732
+              //  double testx = knotcurves[c].knotcurve[s-1].xcoord + walkstepsize*txs;
+              //  double testy = knotcurves[c].knotcurve[s-1].ycoord + walkstepsize*tys;
+              //  double testz = knotcurves[c].knotcurve[s-1].zcoord + walkstepsize*tzs;
 
                 // we are flowing along an integral curve of the curlcirculation here; if everything was perfect this would pick out the bend zero. However, discretization error etc. will 
                 // cause us to flow off the bend zero over time; we need to correct ourselves. We do this by minimizing magb in a plane transverse to the curlcirculation vector. 
                 // We construct a triple spanning this plane by taking grad b (if needed projecting onto the plane perp to curlc) and the cross product.
 
-                // recompute at our test point
-                idwn = (int) (testx) ;
-                jdwn = (int) (testy) ;
-                kdwn = (int) (testz) ;
-                txs=0;
-                tys=0;
-                tzs=0;
-                for(int m=0;m<8;m++)  //linear interpolation from 8 nearest neighbours
-                {
-                    /* Work out increments*/
-                    int iinc = m%2;
-                    int jinc = (m/2)%2;
-                    int kinc = (m/4)%2;
-                    /*Loop over nearest points*/
-                    int i = idwn +iinc;
-                    int j = jdwn+jinc;
-                    int k = kdwn+kinc;
-                    double prefactor = (1-iinc + pow(-1,1+iinc)*xd)*(1-jinc + pow(-1,1+jinc)*yd)*(1-kinc + pow(-1,1+kinc)*zd);
-                    /*interpolate curlcirc over nearest points*/
-                    txs += prefactor*tx[pt(i,j,k)];
-                    tys += prefactor*ty[pt(i,j,k)];
-                    tzs += prefactor*tz[pt(i,j,k)];
-                }
+//                // recompute at our test point
+//                idwn = (int) (testx) ;
+//                jdwn = (int) (testy) ;
+//                kdwn = (int) (testz) ;
+//                txs=0;
+//                tys=0;
+//                tzs=0;
+//                for(int m=0;m<8;m++)  //linear interpolation from 8 nearest neighbours
+//                {
+//                    /* Work out increments*/
+//                    int iinc = m%2;
+//                    int jinc = (m/2)%2;
+//                    int kinc = (m/4)%2;
+//                    /*Loop over nearest points*/
+//                    int i = idwn +iinc;
+//                    int j = jdwn+jinc;
+//                    int k = kdwn+kinc;
+//                    double prefactor = (1-iinc + pow(-1,1+iinc)*xd)*(1-jinc + pow(-1,1+jinc)*yd)*(1-kinc + pow(-1,1+kinc)*zd);
+//                    /*interpolate curlcirc over nearest points*/
+//                    txs += prefactor*tx[pt(i,j,k)];
+//                    tys += prefactor*ty[pt(i,j,k)];
+//                    tzs += prefactor*tz[pt(i,j,k)];
+//                }
+//                // normalise it
+//                norm = sqrt(txs*txs + tys*tys + tzs*tzs);
+//                txs = txs/norm; 
+//                tys = tys/norm;
+//                tzs = tzs/norm; 
+//
                 // now we get some frame perpendicular to this tangent vector. Ill get this by using the cartesian frame and projecting. 
                 double e1x,e1y,e1z;
                 double e2x,e2y,e2z;
@@ -810,8 +816,8 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
                     cartesian[i]=1;
                     // the projection of each cartesian basis vector onto the plane perp to the tangent vector
                     double projx = (cartesian[0] - (cartesian[0]*txs + cartesian[1]*tys + cartesian[2]*tzs)*txs);
-                    double projy = (cartesian[1] - (cartesian[0]*txs + cartesian[1]*tys + cartesian[2]*tzs)*txs);
-                    double projz = (cartesian[2] - (cartesian[0]*txs + cartesian[1]*tys + cartesian[2]*tzs)*txs);
+                    double projy = (cartesian[1] - (cartesian[0]*txs + cartesian[1]*tys + cartesian[2]*tzs)*tys);
+                    double projz = (cartesian[2] - (cartesian[0]*txs + cartesian[1]*tys + cartesian[2]*tzs)*tzs);
                     double tempnorm = sqrt(projx*projx+projy*projy+projz*projz);
                     // Ill actually use the perp with the biggest norm - one of them could be colinear with the tangent vector, this ferrets that one out
                     if(tempnorm>maxnorm)
@@ -827,36 +833,43 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
                 e2z = txs*e1y - tys*e1x;
                 // okay we have our directions in the plane we want to perfrom the line minimisation in. Time to do it
                 // the point
-                gsl_vector* v = gsl_vector_alloc (3);
-                gsl_vector_set (v, 0, testx);
-                gsl_vector_set (v, 1, testy);
-                gsl_vector_set (v, 2, testz);
+                gsl_vector* mypt = gsl_vector_alloc (3);
+                gsl_vector_set (mypt, 0, knotcurves[c].knotcurve[s-1].xcoord);
+                gsl_vector_set (mypt, 1, knotcurves[c].knotcurve[s-1].ycoord);
+                gsl_vector_set (mypt, 2, knotcurves[c].knotcurve[s-1].zcoord);
+                // the tangent
+                gsl_vector* t = gsl_vector_alloc (3);
+                gsl_vector_set (t, 0, txs);
+                gsl_vector_set (t, 1, tys);
+                gsl_vector_set (t, 2, tzs);
                 // one vector in the plane we with to minimize in
-                gsl_vector* f = gsl_vector_alloc (3);
-                gsl_vector_set (f, 0, e1x);
-                gsl_vector_set (f, 1, e1y);
-                gsl_vector_set (f, 2, e1z);
+                gsl_vector* e1 = gsl_vector_alloc (3);
+                gsl_vector_set (e1, 0, e1x);
+                gsl_vector_set (e1, 1, e1y);
+                gsl_vector_set (e1, 2, e1z);
                 // and the other
-                gsl_vector* b = gsl_vector_alloc (3);
-                gsl_vector_set (b, 0, e2x);
-                gsl_vector_set (b, 1, e2y);
-                gsl_vector_set (b, 2, e2z);
-                gsl_vector* minimum = gsl_vector_alloc (2);
-                gsl_vector_set (minimum, 0, 0);
-                gsl_vector_set (minimum, 1, 0);
+                gsl_vector* e2 = gsl_vector_alloc (3);
+                gsl_vector_set (e2, 0, e2x);
+                gsl_vector_set (e2, 1, e2y);
+                gsl_vector_set (e2, 2, e2z);
 
-                // set up the structure to pass into the GSL minimizer. The naming is all from old code
                 struct parameters params; struct parameters* pparams = &params;
                 pparams->ucvmag=&interpolatedmagb;
-                pparams->v = v; pparams->f = f;pparams->b=b;
-                // some initial values
+                pparams->mypt = mypt; pparams->t = t;pparams->e1=e1; pparams->e2=e2;
+                // settings
                 gsl_multimin_function F;
                 F.n=2;
                 F.f = &my_minimisation_function;
                 F.params = (void*) pparams;
+                // stepsize and origin
                 gsl_vector* stepsize = gsl_vector_alloc (2);
-                gsl_vector_set (stepsize, 0, 0.5);
-                gsl_vector_set (stepsize, 1, 0.5);
+                gsl_vector_set (stepsize, 0, 0.1);
+                gsl_vector_set (stepsize, 1, 0.1);
+
+                gsl_vector* minimum = gsl_vector_alloc (2);
+                gsl_vector_set (minimum, 0, 0);
+                gsl_vector_set (minimum, 1, 0);
+
                 gsl_multimin_fminimizer_set (minimizerstate, &F, minimum, stepsize);
                 int iter=0;
                 int status =0;
@@ -875,15 +888,18 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
 
                 }
 
-                while (status == GSL_CONTINUE && iter < 1000);
-
-                gsl_vector_scale(f,gsl_vector_get(minimizerstate->x, 0));
-                gsl_vector_scale(b,gsl_vector_get(minimizerstate->x, 1));
-                gsl_vector_add(f,b);
-                gsl_vector_add(v,f);
-                knotcurves[c].knotcurve[s].xcoord = gsl_vector_get(v, 0);
-                knotcurves[c].knotcurve[s].ycoord= gsl_vector_get(v, 1);
-                knotcurves[c].knotcurve[s].zcoord= gsl_vector_get(v, 2);
+                while (status == GSL_CONTINUE && iter < 5);
+                double x =gsl_vector_get(minimizerstate->x, 0);
+                double y =gsl_vector_get(minimizerstate->x, 1);
+                gsl_vector_scale(e1,x);
+                gsl_vector_scale(e2,y);
+                gsl_vector_scale(t,sqrt(1-x*x-y*y));
+                gsl_vector_add(mypt,e1);
+                gsl_vector_add(mypt,e2);
+                gsl_vector_add(mypt,t);
+                knotcurves[c].knotcurve[s].xcoord = gsl_vector_get(mypt, 0);
+                knotcurves[c].knotcurve[s].ycoord= gsl_vector_get(mypt, 1);
+                knotcurves[c].knotcurve[s].zcoord= gsl_vector_get(mypt, 2);
 
                 knotcurves[c].knotcurve[s].tx = txs;
                 knotcurves[c].knotcurve[s].ty = tys;
@@ -897,9 +913,10 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
                 knotcurves[c].knotcurve[s].gradmagbperpy = e2y;
                 knotcurves[c].knotcurve[s].gradmagbperpz = e2z;
 
-                gsl_vector_free(v);
-                gsl_vector_free(f);
-                gsl_vector_free(b);
+                gsl_vector_free(mypt);
+                gsl_vector_free(e1);
+                gsl_vector_free(e2);
+                gsl_vector_free(t);
                 gsl_vector_free(stepsize);
 
                 // mark the marked array with this curve
@@ -997,26 +1014,36 @@ int pt(const int k,const  int l,const  int m)       //convert i,j,k to single in
 
 double my_minimisation_function(const gsl_vector* minimum, void* params)
 {
+    // circumscirbing a cube
+    double sphereradius = 1.8;
+
     struct parameters* myparameters = (struct parameters *) params;
     likely::TriCubicInterpolator* interpolateducvmag = myparameters->ucvmag;
-    gsl_vector* tempf = gsl_vector_alloc (3);
-    gsl_vector* tempv = gsl_vector_alloc (3);
-    gsl_vector* tempb = gsl_vector_alloc (3);
-    gsl_vector_memcpy (tempf,myparameters->f);
-    gsl_vector_memcpy (tempv,myparameters->v);
-    gsl_vector_memcpy (tempb,myparameters->b);
+    gsl_vector* temppt = gsl_vector_alloc (3);
+    gsl_vector* tempt = gsl_vector_alloc (3);
+    gsl_vector* tempe1 = gsl_vector_alloc (3);
+    gsl_vector* tempe2 = gsl_vector_alloc (3);
+    gsl_vector_memcpy (temppt,myparameters->mypt);
+    gsl_vector_memcpy (tempt,myparameters->t);
+    gsl_vector_memcpy (tempe1,myparameters->e1);
+    gsl_vector_memcpy (tempe2,myparameters->e2);
 
-    // s gives us how much of f to add to p
-    gsl_vector_scale(tempf,gsl_vector_get (minimum, 0));
-    gsl_vector_scale(tempb,gsl_vector_get (minimum, 1));
-    gsl_vector_add(tempf,tempb);
-    gsl_vector_add(tempv,tempf);
-    double px = gsl_vector_get(tempv, 0);
-    double py = gsl_vector_get(tempv, 1);
-    double pz = gsl_vector_get(tempv, 2);
-    gsl_vector_free(tempf);
-    gsl_vector_free(tempv);
-    gsl_vector_free(tempb);
+    // the minimisation happens on a hemisphere about our test point, chosen to be where in the half space where t points. the minima coordinates are x-y coords in this space. the point is given by x e1 + y e2 + sqrt(1- x^2 -y^2)t
+    double x= gsl_vector_get (minimum, 0);
+    double y= gsl_vector_get (minimum, 1);
+    gsl_vector_scale(tempe1,sphereradius*x);
+    gsl_vector_scale(tempe2,sphereradius*y);
+    gsl_vector_scale(tempt,sphereradius*sqrt(1-x*x-y*y));
+    gsl_vector_add(temppt,tempe1);
+    gsl_vector_add(temppt,tempe2);
+    gsl_vector_add(temppt,tempt);
+    double px = gsl_vector_get(temppt, 0);
+    double py = gsl_vector_get(temppt, 1);
+    double pz = gsl_vector_get(temppt, 2);
+    gsl_vector_free(temppt);
+    gsl_vector_free(tempt);
+    gsl_vector_free(tempe1);
+    gsl_vector_free(tempe2);
 
     double value = ((*interpolateducvmag)(px,py,pz));
     return value;
