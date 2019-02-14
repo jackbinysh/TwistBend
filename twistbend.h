@@ -65,21 +65,31 @@ struct parameters
 
 struct knotpoint
 {
+    // point
     double xcoord;   //position vector x coord
     double ycoord;   //position vector y coord
     double zcoord;   //position vector z coord
 
-    double tx;   //position vector x coord
-    double ty;   //position vector y coord
-    double tz;   //position vector z coord
+    // tangent vector
+    double tx;   
+    double ty;   
+    double tz;   
 
-    double gradmagbx;   //position vector x coord
-    double gradmagby;   //position vector x coord
-    double gradmagbz;   //position vector x coord
+    // the solid angle framing
+    double omegax;
+    double omegay;
+    double omegaz;
 
-    double gradmagbperpx;   //position vector x coord
-    double gradmagbperpy;   //position vector x coord
-    double gradmagbperpz;   //position vector x coord
+    // some other framing
+    double e1x;   //position vector x coord
+    double e1y;   //position vector x coord
+    double e1z;   //position vector x coord
+
+    double e2x;   //position vector x coord
+    double e2y;   //position vector x coord
+    double e2z;   //position vector x coord
+
+    double length;
 
 };
 struct knotcurve
@@ -88,12 +98,19 @@ struct knotcurve
     // global data for the knot component
 };
 
+struct Link
+{
+    std::vector<knotcurve> Components;
+}; 
+
 /* functions */
 void startconfig(int& n ,double* nx, double* ny,double* nz,double* px, double* py,double* pz);
 void update(double* nx, double* ny,double* nz,double* px, double* py,double* pz, double* hx, double* hy,double* hz,double* hpx, double* hpy,double* hpz);
 void computeBendAndCurlofCirculation(const int n, const double* nx,const double* ny,const double* nz, double* bx, double* by, double* bz, double* bmag, const double* px, const double* py, const double* pz, double* pmag, double* tx, double* ty, double* tz);
-void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcurve>& knotcurves,double n, gsl_multimin_fminimizer* minimizerstate);
+Link FindBendZeros(double *magb,double* tx,double* ty,double* tz);
 double my_minimisation_function(const gsl_vector* minimum, void* params);
 int pt(const int k,const  int l,const  int m);       //convert i,j,k to single index
+int incp(int i, int p, int N);    //increment i with p for periodic boundary
+int mod(int i, int N);   //my own mod fn
 
 #endif //twistbend_H

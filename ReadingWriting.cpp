@@ -150,9 +150,9 @@ void writeVTKfiles(const int n, const double *nx,const double *ny,const double *
     output.close();
 } // end writeVTKfiles
 
-void print_knot( double t, vector<knotcurve>& knotcurves)
+void print_Curve( double t, Link& Curve)
 {
-    for( int c=0; c < (knotcurves.size()) ; c++)
+    for( int c=0; c < (Curve.Components.size()) ; c++)
     {
 
         /***Write values to file*******/
@@ -164,21 +164,21 @@ void print_knot( double t, vector<knotcurve>& knotcurves)
         ofstream knotout (ss.str().c_str());
 
         int i;
-        int n = knotcurves[c].knotcurve.size();
+        int n = Curve.Components[c].knotcurve.size();
 
         knotout << "# vtk DataFile Version 3.0\nKnot\nASCII\nDATASET UNSTRUCTURED_GRID\n";
         knotout << "POINTS " << n << " float\n";
 
         for(i=0; i<n; i++)
         {
-            knotout << knotcurves[c].knotcurve[i].xcoord << ' ' << knotcurves[c].knotcurve[i].ycoord << ' ' << knotcurves[c].knotcurve[i].zcoord << '\n';
+            knotout << Curve.Components[c].knotcurve[i].xcoord << ' ' << Curve.Components[c].knotcurve[i].ycoord << ' ' << Curve.Components[c].knotcurve[i].zcoord << '\n';
         }
 
         knotout << "\n\nCELLS " << n << ' ' << 3*n << '\n';
 
         for(i=0; i<n; i++)
         {
-            knotout << 2 << ' ' << i << ' ' << (i+1)%n << '\n';
+            knotout << 2 << ' ' << i << ' ' << (i+1%n) << '\n';
         }
 
         knotout << "\n\nCELL_TYPES " << n << '\n';
@@ -193,22 +193,14 @@ void print_knot( double t, vector<knotcurve>& knotcurves)
         knotout << "\nVECTORS t float\n";
         for(i=0; i<n; i++)
         {
-            knotout << knotcurves[c].knotcurve[i].tx << ' ' << knotcurves[c].knotcurve[i].ty << ' ' << knotcurves[c].knotcurve[i].tz << '\n';
+            knotout << Curve.Components[c].knotcurve[i].tx << ' ' << Curve.Components[c].knotcurve[i].ty << ' ' << Curve.Components[c].knotcurve[i].tz << '\n';
         }
 
-        knotout << "\nVECTORS gradmagb float\n";
+        knotout << "\nVECTORS Omega float\n";
         for(i=0; i<n; i++)
         {
-            knotout << knotcurves[c].knotcurve[i].gradmagbx << ' ' << knotcurves[c].knotcurve[i].gradmagby << ' ' << knotcurves[c].knotcurve[i].gradmagbz << '\n';
+            knotout << Curve.Components[c].knotcurve[i].omegax << ' ' << Curve.Components[c].knotcurve[i].omegay << ' ' << Curve.Components[c].knotcurve[i].omegaz << '\n';
         }
-
-        knotout << "\nVECTORS gradmagbperp float\n";
-        for(i=0; i<n; i++)
-        {
-            knotout << knotcurves[c].knotcurve[i].gradmagbperpx << ' ' << knotcurves[c].knotcurve[i].gradmagbperpy << ' ' << knotcurves[c].knotcurve[i].gradmagbperpz << '\n';
-        }
-
-
         knotout.close();
     }
 }

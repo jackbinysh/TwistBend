@@ -4,6 +4,7 @@
 /**************************************************************/
 
 #include "twistbend.h"
+#include "SolidAngleLink.h"
 #include "ReadingWriting.h"
 #include <iostream>
 #include <fstream>
@@ -48,20 +49,14 @@ int main(int argc, char** argv)
     double* hpy=new double[LL];
     double* hpz=new double[LL];
 
-
-    // the structure we store the bend zeros in
-    vector<knotcurve> knotcurves;
-    // GSL initialization
-    const gsl_multimin_fminimizer_type *Type;
-    Type = gsl_multimin_fminimizer_nmsimplex2;
-    gsl_multimin_fminimizer *minimizerstate;
-    minimizerstate = gsl_multimin_fminimizer_alloc (Type,2);
+    // the solid angle
+    double* phi=new double[LL];
 
     int n =0;
     startconfig(n, nx,ny,nz,px,py,pz);
     cout << "starting simulation" << endl;
 
-#pragma omp parallel default(none) shared(nx,ny,nz,px,py,pz,pmag, hx,hy,hz,hpx,hpy,hpz, bx,by,bz,bmag, tx,ty,tz, knotcurves,minimizerstate, Type, n,cout)
+#pragma omp parallel default(none) shared(nx,ny,nz,px,py,pz,pmag, hx,hy,hz,hpx,hpy,hpz, bx,by,bz,bmag, tx,ty,tz, n,cout)
     {
         while(n<=Nmax)
         {
@@ -83,8 +78,8 @@ int main(int argc, char** argv)
                 {
                     cout << "writing the bend zeros at timestep " << n << endl;
                     computeBendAndCurlofCirculation(n,nx,ny,nz,bx,by,bz,bmag,px,py,pz,pmag, tx,ty,tz);
-                    FindBendZeros(bmag,tx, ty,tz,knotcurves,n,minimizerstate);
-                    print_knot(n,knotcurves);
+                    Link Curve = FindBendZeros(bmag,tx,ty,tz);
+                    print_Curve(n,Curve);
 
                 }
                 n++;
@@ -674,22 +669,27 @@ void computeBendAndCurlofCirculation(const int n, const double* nx,const double*
     }
 }
 
-void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcurve>& knotcurves,double n, gsl_multimin_fminimizer* minimizerstate)
+Link FindBendZeros(double *magb,double* tx,double* ty,double* tz)
 {
-
-    // first thing, clear the knotcurve object before we begin writing a new one
-    knotcurves.clear(); //empty vector with knot curve points
-
+    // our Curve
+    Link Curve;
     // initialise the tricubic interpolator for ucvmag
     likely::TriCubicInterpolator interpolatedmagb(magb, 1, Lx,Ly,Lz);
 
     // an array holding points we have already visited, so we dont keep tracing out the same bend zero 
     vector<int> marked(Lx*Ly*Lz,0);
 
+    // the solid angle
+    double* phi=new double[LL];
 
     // settings
     double threshold =0.05;
 
+    // GSL initialization
+    const gsl_multimin_fminimizer_type *Type;
+    Type = gsl_multimin_fminimizer_nmsimplex2;
+    gsl_multimin_fminimizer *minimizerstate;
+    minimizerstate = gsl_multimin_fminimizer_alloc (Type,2);
 
     int c =0;
     bool knotexists = true;
@@ -720,11 +720,11 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
 
         if(knotexists)
         {
-            knotcurves.push_back(knotcurve() );
-            knotcurves[c].knotcurve.push_back(knotpoint());
-            knotcurves[c].knotcurve[0].xcoord=kmin;
-            knotcurves[c].knotcurve[0].ycoord=lmin;
-            knotcurves[c].knotcurve[0].zcoord=mmin;
+            Curve.Components.push_back(knotcurve() );
+            Curve.Components[c].knotcurve.push_back(knotpoint());
+            Curve.Components[c].knotcurve[0].xcoord=kmin;
+            Curve.Components[c].knotcurve[0].ycoord=lmin;
+            Curve.Components[c].knotcurve[0].zcoord=mmin;
 
             int s=1;
             bool finish=false;
@@ -732,7 +732,7 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
             while (finish==false)
             {   
                 //pop a new point on the stack
-                knotcurves[c].knotcurve.push_back(knotpoint());
+                Curve.Components[c].knotcurve.push_back(knotpoint());
 
                 // the tangent vector cirlcirculation 
                 double txs=0;
@@ -740,13 +740,13 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
                 double tzs=0;
 
                 /**Find nearest gridpoint**/
-                int idwn = (int) ((knotcurves[c].knotcurve[s-1].xcoord));
-                int jdwn = (int) ((knotcurves[c].knotcurve[s-1].ycoord));
-                int kdwn = (int) ((knotcurves[c].knotcurve[s-1].zcoord));
+                int idwn = (int) ((Curve.Components[c].knotcurve[s-1].xcoord));
+                int jdwn = (int) ((Curve.Components[c].knotcurve[s-1].ycoord));
+                int kdwn = (int) ((Curve.Components[c].knotcurve[s-1].zcoord));
                 /*curve to gridpoint down distance*/
-                double xd = knotcurves[c].knotcurve[s-1].xcoord - idwn;
-                double yd = knotcurves[c].knotcurve[s-1].ycoord - jdwn;
-                double zd = knotcurves[c].knotcurve[s-1].zcoord - kdwn;
+                double xd = Curve.Components[c].knotcurve[s-1].xcoord - idwn;
+                double yd = Curve.Components[c].knotcurve[s-1].ycoord - jdwn;
+                double zd = Curve.Components[c].knotcurve[s-1].zcoord - kdwn;
                 for(int m=0;m<8;m++)  //linear interpolation from 8 nearest neighbours
                 {
                     /* Work out increments*/
@@ -837,9 +837,9 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
                 // okay we have our directions in the plane we want to perfrom the line minimisation in. Time to do it
                 // the point
                 gsl_vector* mypt = gsl_vector_alloc (3);
-                gsl_vector_set (mypt, 0, knotcurves[c].knotcurve[s-1].xcoord);
-                gsl_vector_set (mypt, 1, knotcurves[c].knotcurve[s-1].ycoord);
-                gsl_vector_set (mypt, 2, knotcurves[c].knotcurve[s-1].zcoord);
+                gsl_vector_set (mypt, 0, Curve.Components[c].knotcurve[s-1].xcoord);
+                gsl_vector_set (mypt, 1, Curve.Components[c].knotcurve[s-1].ycoord);
+                gsl_vector_set (mypt, 2, Curve.Components[c].knotcurve[s-1].zcoord);
                 // the tangent
                 gsl_vector* t = gsl_vector_alloc (3);
                 gsl_vector_set (t, 0, txs);
@@ -900,21 +900,21 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
                 gsl_vector_add(mypt,e1);
                 gsl_vector_add(mypt,e2);
                 gsl_vector_add(mypt,t);
-                knotcurves[c].knotcurve[s].xcoord = gsl_vector_get(mypt, 0);
-                knotcurves[c].knotcurve[s].ycoord= gsl_vector_get(mypt, 1);
-                knotcurves[c].knotcurve[s].zcoord= gsl_vector_get(mypt, 2);
+                Curve.Components[c].knotcurve[s].xcoord = gsl_vector_get(mypt, 0);
+                Curve.Components[c].knotcurve[s].ycoord= gsl_vector_get(mypt, 1);
+                Curve.Components[c].knotcurve[s].zcoord= gsl_vector_get(mypt, 2);
 
-                knotcurves[c].knotcurve[s].tx = txs;
-                knotcurves[c].knotcurve[s].ty = tys;
-                knotcurves[c].knotcurve[s].tz = tzs;
+                Curve.Components[c].knotcurve[s].tx = txs;
+                Curve.Components[c].knotcurve[s].ty = tys;
+                Curve.Components[c].knotcurve[s].tz = tzs;
 
-                knotcurves[c].knotcurve[s].gradmagbx =e1x;
-                knotcurves[c].knotcurve[s].gradmagby = e1y;
-                knotcurves[c].knotcurve[s].gradmagbz = e1z;
+                Curve.Components[c].knotcurve[s].e1x =e1x;
+                Curve.Components[c].knotcurve[s].e1y = e1y;
+                Curve.Components[c].knotcurve[s].e1z = e1z;
 
-                knotcurves[c].knotcurve[s].gradmagbperpx = e2x;
-                knotcurves[c].knotcurve[s].gradmagbperpy = e2y;
-                knotcurves[c].knotcurve[s].gradmagbperpz = e2z;
+                Curve.Components[c].knotcurve[s].e2x = e2x;
+                Curve.Components[c].knotcurve[s].e2y = e2y;
+                Curve.Components[c].knotcurve[s].e2z = e2z;
 
                 gsl_vector_free(mypt);
                 gsl_vector_free(e1);
@@ -923,12 +923,12 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
                 gsl_vector_free(stepsize);
 
                 // mark the marked array with this curve
-                marked[pt((int) knotcurves[c].knotcurve[s].xcoord,(int) knotcurves[c].knotcurve[s].ycoord,(int) knotcurves[c].knotcurve[s].zcoord)]=-1;
+                marked[pt((int) Curve.Components[c].knotcurve[s].xcoord,(int) Curve.Components[c].knotcurve[s].ycoord,(int) Curve.Components[c].knotcurve[s].zcoord)]=-1;
 
                 // okay we got our new point. Now the question is, when should we terminate this process? Do it by whether we are close to the start point after some nontrivial number of steps
-                double xdiff = knotcurves[c].knotcurve[0].xcoord - knotcurves[c].knotcurve[s].xcoord;     //distance from start/end point
-                double ydiff = knotcurves[c].knotcurve[0].ycoord - knotcurves[c].knotcurve[s].ycoord;
-                double zdiff = knotcurves[c].knotcurve[0].zcoord - knotcurves[c].knotcurve[s].zcoord;
+                double xdiff = Curve.Components[c].knotcurve[0].xcoord - Curve.Components[c].knotcurve[s].xcoord;     //distance from start/end point
+                double ydiff = Curve.Components[c].knotcurve[0].ycoord - Curve.Components[c].knotcurve[s].ycoord;
+                double zdiff = Curve.Components[c].knotcurve[0].zcoord - Curve.Components[c].knotcurve[s].zcoord;
                 if( (sqrt(xdiff*xdiff + ydiff*ydiff + zdiff*zdiff) <3 && s > 30 )||s>2000) finish = true;
                 s++;
             }
@@ -984,13 +984,31 @@ void FindBendZeros(double *magb,double* tx,double* ty,double* tz, vector<knotcur
         }
         c++;
     }
+    // clear up
+    gsl_multimin_fminimizer_free(minimizerstate);
+
+    // okay, we have the bend zeros. Now do some geometry
+    // curve lengths
+    for(int c=0; c<Curve.Components.size(); c++)
+    {
+        int NP = Curve.Components[c].knotcurve.size();
+        for(int s=0; s<NP; s++)
+        {
+            double dx = (Curve.Components[c].knotcurve[(s+1)%NP].xcoord - Curve.Components[c].knotcurve[s].xcoord);
+            double dy = (Curve.Components[c].knotcurve[(s+1)%NP].ycoord - Curve.Components[c].knotcurve[s].ycoord);
+            double dz = (Curve.Components[c].knotcurve[(s+1)%NP].zcoord - Curve.Components[c].knotcurve[s].zcoord);
+            double deltas = sqrt(dx*dx+dy*dy+dz*dz);
+            Curve.Components[c].knotcurve[s].length = deltas;
+        }
+    }
+
+    // get the solid angle framing
+    ComputeSolidAngle(phi,Curve);
+    ComputeSolidAngleFraming(phi,Curve);
+
+    return Curve;
 }
 
-// some little functions which go back and forth from point to index
-int pt(const int k,const  int l,const  int m)       //convert i,j,k to single index
-{
-    return (m*Ly*Lx+l*Lx+k);
-}
 
 double my_minimisation_function(const gsl_vector* minimum, void* params)
 {
@@ -1027,4 +1045,22 @@ double my_minimisation_function(const gsl_vector* minimum, void* params)
 
     double value = ((*interpolateducvmag)(px,py,pz));
     return value;
+}
+
+// some little functions which go back and forth from point to index
+int pt(const int k,const  int l,const  int m)       //convert i,j,k to single index
+{
+    return (m*Ly*Lx+l*Lx+k);
+}
+
+int incp(int i, int p, int N)    //increment i with p for periodic boundary
+{
+    if(i+p<0) return (N+i+p);
+    else return ((i+p)%N);
+}
+
+int mod(int i, int N)    //my own mod fn
+{
+    if(i<0) return (N+i);
+    else return ((i)%N);
 }
