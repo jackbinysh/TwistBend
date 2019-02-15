@@ -105,7 +105,8 @@ void ComputeSolidAngleFraming(double* phi,Link&  Curve)
     // settings
     int NumTestPoints=100;
     std::vector< double > testphis(NumTestPoints);
-    double r = 1;
+    // radius of test circle
+    double r = 3;
     double phi0 = 0;
 
     // Im going to want phi values around the filament. for this, we construct an interpolator object

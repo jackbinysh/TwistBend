@@ -150,7 +150,7 @@ void writeVTKfiles(const int n, const double *nx,const double *ny,const double *
     output.close();
 } // end writeVTKfiles
 
-void print_Curve( double t, Link& Curve)
+void print_Curve( double t, Link& Curve, string Name)
 {
     for( int c=0; c < (Curve.Components.size()) ; c++)
     {
@@ -160,7 +160,7 @@ void print_Curve( double t, Link& Curve)
         ss.str("");
         ss.clear();
 
-        ss << "vtk_bendzeros" << c << "_" << t <<  ".vtk";
+        ss << Name << c << "_" << t <<  ".vtk";
         ofstream knotout (ss.str().c_str());
 
         int i;
@@ -178,7 +178,7 @@ void print_Curve( double t, Link& Curve)
 
         for(i=0; i<n; i++)
         {
-            knotout << 2 << ' ' << i << ' ' << (i+1%n) << '\n';
+            knotout << 2 << ' ' << i << ' ' << (i+1)%n << '\n';
         }
 
         knotout << "\n\nCELL_TYPES " << n << '\n';
@@ -196,11 +196,20 @@ void print_Curve( double t, Link& Curve)
             knotout << Curve.Components[c].knotcurve[i].tx << ' ' << Curve.Components[c].knotcurve[i].ty << ' ' << Curve.Components[c].knotcurve[i].tz << '\n';
         }
 
+        
         knotout << "\nVECTORS Omega float\n";
         for(i=0; i<n; i++)
         {
             knotout << Curve.Components[c].knotcurve[i].omegax << ' ' << Curve.Components[c].knotcurve[i].omegay << ' ' << Curve.Components[c].knotcurve[i].omegaz << '\n';
         }
+
+        knotout << "\n\nCELL_DATA " << n << "\n\n";
+        knotout << "\nSCALARS Length float\nLOOKUP_TABLE default\n";
+        for(i=0; i<n; i++)
+        {
+            knotout << Curve.Components[c].knotcurve[i].length << '\n';
+        }
+        
         knotout.close();
     }
 }

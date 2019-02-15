@@ -15,6 +15,10 @@
 #include <string>
 #include <complex>
 #include <omp.h>
+//includes for the signal processing
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_fft_real.h>
+#include <gsl/gsl_fft_halfcomplex.h>
 
 using namespace std;
 
@@ -49,9 +53,6 @@ int main(int argc, char** argv)
     double* hpy=new double[LL];
     double* hpz=new double[LL];
 
-    // the solid angle
-    double* phi=new double[LL];
-
     int n =0;
     startconfig(n, nx,ny,nz,px,py,pz);
     cout << "starting simulation" << endl;
@@ -78,8 +79,11 @@ int main(int argc, char** argv)
                 {
                     cout << "writing the bend zeros at timestep " << n << endl;
                     computeBendAndCurlofCirculation(n,nx,ny,nz,bx,by,bz,bmag,px,py,pz,pmag, tx,ty,tz);
-                    Link Curve = FindBendZeros(bmag,tx,ty,tz);
-                    print_Curve(n,Curve);
+                    Link Curve;
+                    Link PushOffCurve;
+                    FindBendZeros(Curve,PushOffCurve,bx,by,bz, bmag,tx,ty,tz);
+                    print_Curve(n,Curve, "vtk_bendzeros");
+                    print_Curve(n,PushOffCurve, "vtk_bendzerosPushOff");
 
                 }
                 n++;
@@ -669,18 +673,13 @@ void computeBendAndCurlofCirculation(const int n, const double* nx,const double*
     }
 }
 
-Link FindBendZeros(double *magb,double* tx,double* ty,double* tz)
+void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double* bz, double *magb,double* tx,double* ty,double* tz)
 {
-    // our Curve
-    Link Curve;
     // initialise the tricubic interpolator for ucvmag
     likely::TriCubicInterpolator interpolatedmagb(magb, 1, Lx,Ly,Lz);
 
     // an array holding points we have already visited, so we dont keep tracing out the same bend zero 
     vector<int> marked(Lx*Ly*Lz,0);
-
-    // the solid angle
-    double* phi=new double[LL];
 
     // settings
     double threshold =0.05;
@@ -866,8 +865,8 @@ Link FindBendZeros(double *magb,double* tx,double* ty,double* tz)
                 F.params = (void*) pparams;
                 // stepsize and origin
                 gsl_vector* stepsize = gsl_vector_alloc (2);
-                gsl_vector_set (stepsize, 0, 0.1);
-                gsl_vector_set (stepsize, 1, 0.1);
+                gsl_vector_set (stepsize, 0, 0.05);
+                gsl_vector_set (stepsize, 1, 0.05);
 
                 gsl_vector* minimum = gsl_vector_alloc (2);
                 gsl_vector_set (minimum, 0, 0);
@@ -890,8 +889,8 @@ Link FindBendZeros(double *magb,double* tx,double* ty,double* tz)
                     status = gsl_multimin_test_size (minimizersize, 1e-10);
 
                 }
+                while (status == GSL_CONTINUE && iter <3);
 
-                while (status == GSL_CONTINUE && iter < 5);
                 double x =gsl_vector_get(minimizerstate->x, 0);
                 double y =gsl_vector_get(minimizerstate->x, 1);
                 gsl_vector_scale(e1,x);
@@ -987,6 +986,60 @@ Link FindBendZeros(double *magb,double* tx,double* ty,double* tz)
     // clear up
     gsl_multimin_fminimizer_free(minimizerstate);
 
+    // curve smoothing via a low pass filter
+    /*
+    for(int c=0; c<Curve.Components.size(); c++)
+    {
+        int NP = Curve.Components[c].knotcurve.size();
+        vector<double> coord(NP);
+        gsl_fft_real_wavetable * real;
+        gsl_fft_halfcomplex_wavetable * hc;
+        gsl_fft_real_workspace * work;
+        work = gsl_fft_real_workspace_alloc (NP);
+        real = gsl_fft_real_wavetable_alloc (NP);
+        hc = gsl_fft_halfcomplex_wavetable_alloc (NP);
+        for(int j=1; j<4; j++)
+        {
+            switch(j)
+            {
+                case 1 :
+                    for(int i=0; i<NP; i++) coord[i] =  Curve.Components[c].knotcurve[i].xcoord ; break;
+                case 2 :
+                    for(int i=0; i<NP; i++) coord[i] =  Curve.Components[c].knotcurve[i].ycoord ; break;
+                case 3 :
+                    for(int i=0; i<NP; i++) coord[i] =  Curve.Components[c].knotcurve[i].zcoord ; break;
+            }
+            double* data = coord.data();
+            // take the fft
+            gsl_fft_real_transform (data, 1, NP, real, work);
+            // 21/11/2016: make our low pass filter. To apply our filter. we should sample frequencies fn = n/Delta N , n = -N/2 ... N/2
+            // this is discretizing the nyquist interval, with extreme frequency ~1/2Delta.
+            // to cut out the frequencies of grid fluctuation size and larger we need a lengthscale Delta to
+            // plug in above. im doing a rough length calc below, this might be overkill.
+            // at the moment its just a hard filter, we can choose others though.
+            // compute a rough length to set scale
+            double filter;
+            const double cutoff = 1;
+            for (int i = 0; i < NP; ++i)
+            {
+                filter = 1/sqrt(1+pow((i/cutoff),6));
+                data[i] *= filter;
+            };
+            // transform back
+            gsl_fft_halfcomplex_inverse (data, 1, NP, hc, work);
+            switch(j)
+            {
+                case 1 :
+                    for(int i=0; i<NP; i++)  Curve.Components[c].knotcurve[i].xcoord = coord[i] ; break;
+                case 2 :
+                    for(int i=0; i<NP; i++)  Curve.Components[c].knotcurve[i].ycoord = coord[i] ; break;
+                case 3 :
+                    for(int i=0; i<NP; i++)  Curve.Components[c].knotcurve[i].zcoord = coord[i] ; break;
+            }
+        }
+    }
+    */
+    
     // okay, we have the bend zeros. Now do some geometry
     // curve lengths
     for(int c=0; c<Curve.Components.size(); c++)
@@ -1002,18 +1055,63 @@ Link FindBendZeros(double *magb,double* tx,double* ty,double* tz)
         }
     }
 
-    // get the solid angle framing
-    ComputeSolidAngle(phi,Curve);
-    ComputeSolidAngleFraming(phi,Curve);
+    //get the solid angle framings of each individual curve component. These have zero linking number with the components itself.
+    // Note: this isnt the same as the solid angle framing for the whole link. in that case, that framing has SL(k_i) = -sum Lk(k_i,k_j). Im treating each component individually, ignoring the others.
+    double* phi=new double[LL];
+    for(int c=0; c<Curve.Components.size(); c++)
+    {
+        Link tempCurve;
+        tempCurve.Components.push_back(Curve.Components[c]);
+        ComputeSolidAngle(phi,tempCurve);
+        ComputeSolidAngleFraming(phi,tempCurve);
+        Curve.Components[c]=tempCurve.Components[0];
+    }
+    delete phi; 
 
-    return Curve;
+    // okay, we have the solid angle framing for the curve. Now do 2 push offs
+    //  interpolation of the b vector
+    likely::TriCubicInterpolator interpolatedbx(bx, 1, Lx,Ly,Lz);
+    likely::TriCubicInterpolator interpolatedby(by, 1, Lx,Ly,Lz);
+    likely::TriCubicInterpolator interpolatedbz(bz, 1, Lx,Ly,Lz);
+    double firstpushdist = 1;
+    double secondpushdist = 5;
+    for(int c=0; c<Curve.Components.size(); c++)
+    {
+        PushOffCurve.Components.push_back(Curve.Components[c]);
+        int NP = Curve.Components[c].knotcurve.size();
+        // first pushoff onto the seifert surface
+        for(int s=0; s<NP; s++)
+        {
+            PushOffCurve.Components[c].knotcurve[s].xcoord =Curve.Components[c].knotcurve[s].xcoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegax;
+            PushOffCurve.Components[c].knotcurve[s].ycoord =Curve.Components[c].knotcurve[s].xcoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegay;
+            PushOffCurve.Components[c].knotcurve[s].zcoord =Curve.Components[c].knotcurve[s].xcoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegaz;
+        }
+
+        // that was the first pushoff.For the second we push along the direction of b at this point
+        for(int s=0; s<NP; s++)
+        {
+            double xcoord = PushOffCurve.Components[c].knotcurve[s].xcoord;
+            double ycoord = PushOffCurve.Components[c].knotcurve[s].ycoord;
+            double zcoord = PushOffCurve.Components[c].knotcurve[s].zcoord;
+            double tempbx = interpolatedbx(xcoord,ycoord,zcoord);
+            double tempby = interpolatedby(xcoord,ycoord,zcoord);
+            double tempbz = interpolatedbz(xcoord,ycoord,zcoord);
+            double norm = sqrt(tempbx*tempbx + tempby*tempby + tempbz*tempbz);
+            tempbx = tempbx/norm; 
+            tempby = tempby/norm; 
+            tempbz = tempbz/norm; 
+            PushOffCurve.Components[c].knotcurve[s].xcoord =xcoord+secondpushdist*tempbx;
+            PushOffCurve.Components[c].knotcurve[s].ycoord =xcoord+secondpushdist*tempby;
+            PushOffCurve.Components[c].knotcurve[s].zcoord =xcoord+secondpushdist*tempbz;
+        }
+
+    }
 }
 
 
 double my_minimisation_function(const gsl_vector* minimum, void* params)
 {
-    // circumscirbing a cube
-    double sphereradius = 1.8;
+    double sphereradius = 1.2;
 
     struct parameters* myparameters = (struct parameters *) params;
     likely::TriCubicInterpolator* interpolateducvmag = myparameters->ucvmag;
@@ -1029,6 +1127,7 @@ double my_minimisation_function(const gsl_vector* minimum, void* params)
     // the minimisation happens on a hemisphere about our test point, chosen to be where in the half space where t points. the minima coordinates are x-y coords in this space. the point is given by x e1 + y e2 + sqrt(1- x^2 -y^2)t
     double x= gsl_vector_get (minimum, 0);
     double y= gsl_vector_get (minimum, 1);
+    if(1-x*x-y*y <0){cout << "below zero!";}
     gsl_vector_scale(tempe1,sphereradius*x);
     gsl_vector_scale(tempe2,sphereradius*y);
     gsl_vector_scale(tempt,sphereradius*sqrt(1-x*x-y*y));

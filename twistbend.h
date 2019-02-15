@@ -24,7 +24,7 @@ using namespace std;
 
 // ============================================================
 
-const int Nmax = 300000;       // Number of timesteps
+const int Nmax = 10000;       // Number of timesteps
 const int vtkstepskip = 5000;   // print pitch and bend every stepskip timesteps
 const int curvestepskip = 500;   // print pitch and bend every stepskip timesteps
 const int curvestarttime = 3000;   // print pitch and bend every stepskip timesteps
@@ -107,7 +107,7 @@ struct Link
 void startconfig(int& n ,double* nx, double* ny,double* nz,double* px, double* py,double* pz);
 void update(double* nx, double* ny,double* nz,double* px, double* py,double* pz, double* hx, double* hy,double* hz,double* hpx, double* hpy,double* hpz);
 void computeBendAndCurlofCirculation(const int n, const double* nx,const double* ny,const double* nz, double* bx, double* by, double* bz, double* bmag, const double* px, const double* py, const double* pz, double* pmag, double* tx, double* ty, double* tz);
-Link FindBendZeros(double *magb,double* tx,double* ty,double* tz);
+void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double* bz, double *magb,double* tx,double* ty,double* tz);
 double my_minimisation_function(const gsl_vector* minimum, void* params);
 int pt(const int k,const  int l,const  int m);       //convert i,j,k to single index
 int incp(int i, int p, int N);    //increment i with p for periodic boundary
