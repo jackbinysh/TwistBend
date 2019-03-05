@@ -32,13 +32,13 @@ All the action happens inside FindBendZeros. The datatype "Link" which goes into
 
 ## list of settings, their location
 All the settings are at the top of the function, each commented by their function. Its reproduced below:
--     threshold for detecting another bend zero (const double threshold) 
--     The size of the hemisphere in front of the current point which the code searches for the next point to go to. The data is on a grid of size 1, so it makes no sense for this to be way below 1. some O(1) number here is good. (const double sphereradius)
--     How many steps on the hemisphere the GSL minimizer should make. Ive found setting this too high makes the code more jagged. I don't reaaaaallly know why, perhaps being really picky about where the minimum is in "noisy" data causes it to run off. ( const int numgsliterations;)
--     the initial stepsize for the GSL minimzer. Something below 1, I use something well below it. ( const double initialgslstepsize;)
--     how close shoud our current point be to the initial point before we terminate and close the loop? Again, something O(1), I don't have an amazing feel. (const double terminationdistance;)
--     when we add the first point, we will be close to the start point and we will hit the termination condition above. To avoid this I just require us to be some number of points along the tracing before termination is allowed. This is the number of points (const int minnumpoints;)
--     when we do the two push offs, need to specify how far to push. roughly O(1) numbers again.  (double firstpushdist; double secondpushdist;)
+- threshold for detecting another bend zero (const double threshold) 
+- The size of the hemisphere in front of the current point which the code searches for the next point to go to. The data is on a grid of size 1, so it makes no sense for this to be way below 1. some O(1) number here is good. (const double sphereradius)
+- How many steps on the hemisphere the GSL minimizer should make. Ive found setting this too high makes the code more jagged. I don't reaaaaallly know why, perhaps being really picky about where the minimum is in "noisy" data causes it to run off. ( const int numgsliterations;)
+- the initial stepsize for the GSL minimzer. Something below 1, I use something well below it. ( const double initialgslstepsize;)
+- how close shoud our current point be to the initial point before we terminate and close the loop? Again, something O(1), I don't have an amazing feel. (const double terminationdistance;)
+- when we add the first point, we will be close to the start point and we will hit the termination condition above. To avoid this I just require us to be some number of points along the tracing before termination is allowed. This is the number of points (const int minnumpoints;)
+- when we do the two push offs, need to specify how far to push. roughly O(1) numbers again.  (double firstpushdist; double secondpushdist;)
 
 ## Outline of how the code works
 
