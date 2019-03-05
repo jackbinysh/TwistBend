@@ -107,9 +107,9 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
 
                 // define texture to simulate -- 0 or 1
                 HELICONICAL = 0; // standard heliconical texture
-                HOPF = 1; // Hopf texture
+                HOPF = 0; // Hopf texture
                 HOPF2 = 0; // Hopf texture
-                SQUARE = 0;
+                SQUARE = 1;
 
                 // initial configuration
                 k=l=m=0;
@@ -680,6 +680,7 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
      * SETTINGS
      *
      */
+    const int buffersize=4;
     // threshold for detecting another bend zero
     const double threshold =0.05;
     // The size of the hemisphere in front of the current point which the code searches for the next point to go to. The data is on a grid of size 1, so it makes no sense for this to be way below 1. some O(1) number here is good.
@@ -724,11 +725,11 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
     {
         double   bmin = 10000000;// I dunno some big number 
         int kmin=-1,lmin=-1,mmin=-1;
-        for(int k=0;k<Lx;k++)
+        for(int k=buffersize;k<Lx-buffersize;k++)
         {
-            for(int l=0; l<Ly; l++)
+            for(int l=buffersize; l<Ly-buffersize; l++)
             {
-                for(int m=0; m<Lz; m++) 
+                for(int m=buffersize; m<Lz-buffersize; m++) 
                 {
                     int n = pt(k,l,m);
                     if( magb[n] < bmin && marked[n]==0)
@@ -756,6 +757,9 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
             int s=1;
             bool lastpoint=false;
             bool finish=false;
+            bool BoundaryTerminationCondition=false;
+            double flowsign=1.0;
+            int bufferhits=0;
             while (!finish)
             {   
 
@@ -845,10 +849,11 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
                     gsl_vector_set (mypt, 1, Curve.Components[c].knotcurve[s-1].ycoord);
                     gsl_vector_set (mypt, 2, Curve.Components[c].knotcurve[s-1].zcoord);
                     // the tangent
+                    // NOTE THIS IS WEIGHTED BY THE FLOWSIGN. Says whether we are flying forwards or backwards along the tangent vector field
                     gsl_vector* t = gsl_vector_alloc (3);
-                    gsl_vector_set (t, 0, txs);
-                    gsl_vector_set (t, 1, tys);
-                    gsl_vector_set (t, 2, tzs);
+                    gsl_vector_set (t, 0, flowsign*txs);
+                    gsl_vector_set (t, 1, flowsign*tys);
+                    gsl_vector_set (t, 2, flowsign*tzs);
                     // one vector in the plane we with to minimize in
                     gsl_vector* e1 = gsl_vector_alloc (3);
                     gsl_vector_set (e1, 0, e1x);
@@ -859,6 +864,8 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
                     gsl_vector_set (e2, 0, e2x);
                     gsl_vector_set (e2, 1, e2y);
                     gsl_vector_set (e2, 2, e2z);
+
+
 
                     struct parameters params; struct parameters* pparams = &params;
                     pparams->sphereradius = sphereradius;
@@ -908,8 +915,6 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
                     Curve.Components[c].knotcurve[s].xcoord = gsl_vector_get(mypt, 0);
                     Curve.Components[c].knotcurve[s].ycoord= gsl_vector_get(mypt, 1);
                     Curve.Components[c].knotcurve[s].zcoord= gsl_vector_get(mypt, 2);
-
-
                     gsl_vector_free(mypt);
                     gsl_vector_free(e1);
                     gsl_vector_free(e2);
@@ -918,6 +923,31 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
 
                     // mark the marked array with this curve
                     marked[pt((int) Curve.Components[c].knotcurve[s].xcoord,(int) Curve.Components[c].knotcurve[s].ycoord,(int) Curve.Components[c].knotcurve[s].zcoord)]=-1;
+
+                    // did we just go into the buffer region around the edge of the box?
+                    if(KnotpointInBuffer(Curve.Components[c].knotcurve[s], buffersize))
+                    {
+                        bufferhits++;
+                        if(bufferhits==1)
+                        {
+                            // if we did, start again from this point on the grid edge, but walking backwards! 
+                            // strip off everything but the SECOND last point in the vector ,i.e the last point not in the buffer 
+                            // grab that second last point 
+                            knotpoint newstartingpoint = Curve.Components[c].knotcurve[s];
+                            // erase 
+                             Curve.Components[c].knotcurve.clear();
+                             // put the start point back on
+                            Curve.Components[c].knotcurve.push_back(newstartingpoint);
+                            // reset s, set the flow sign to reverse 
+                            s =0;
+                            flowsign = -1;
+                        }
+                        else if(bufferhits==2)
+                        {
+                            BoundaryTerminationCondition=true;
+                            Curve.Components[c].knotcurve.pop_back();
+                        }
+                    }
                 }
                 // okay we got our new point. Now the question is, when should we terminate this process? Do it by whether we are close to the start point after some nontrivial number of steps
                 double xdiff = Curve.Components[c].knotcurve[0].xcoord - Curve.Components[c].knotcurve[s].xcoord;     //distance from start/end point
@@ -925,7 +955,7 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
                 double zdiff = Curve.Components[c].knotcurve[0].zcoord - Curve.Components[c].knotcurve[s].zcoord;
                 // when we terminate, get the stats for the last point but dont add another on
                 if(lastpoint)finish=true;
-                if( (sqrt(xdiff*xdiff + ydiff*ydiff + zdiff*zdiff) < terminationdistance && s > minnumpoints )||s>2000)
+                if( (sqrt(xdiff*xdiff + ydiff*ydiff + zdiff*zdiff) < terminationdistance && s > minnumpoints )|| BoundaryTerminationCondition || s>2000)
                 {
                     lastpoint = true;
                 }
@@ -1149,6 +1179,15 @@ double my_minimisation_function(const gsl_vector* minimum, void* params)
     return value;
 }
 
+bool KnotpointInBuffer(const knotpoint knotpoint, const int buffer)
+{
+    bool xoverflow = (knotpoint.xcoord < buffer) || (knotpoint.xcoord > Lx - buffer);
+    bool yoverflow = (knotpoint.ycoord < buffer) || (knotpoint.ycoord > Ly - buffer);
+    bool zoverflow = (knotpoint.zcoord < buffer) || (knotpoint.zcoord > Lz - buffer);
+
+    return xoverflow || yoverflow || zoverflow; 
+}
+
 // some little functions which go back and forth from point to index
 int pt(const int k,const  int l,const  int m)       //convert i,j,k to single index
 {
@@ -1166,3 +1205,10 @@ int mod(int i, int N)    //my own mod fn
     if(i<0) return (N+i);
     else return ((i)%N);
 }
+int circularmod(int i, int N)    // mod i by N in a ciruclar fashion, ie wrapping around both in the +ve and -ve directions
+{
+    if(i<0) return (N - ((-i)%N))%N;
+    else return i%N;
+}
+
+

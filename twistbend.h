@@ -24,13 +24,13 @@ using namespace std;
 
 // ============================================================
 
-const int Nmax = 10000;       // Number of timesteps
+const int Nmax = 50000;       // Number of timesteps
 const int vtkstepskip = 1000;   // print pitch and bend every stepskip timesteps
 const int curvestepskip = 500;   // print pitch and bend every stepskip timesteps
-const int curvestarttime = 3000;   // print pitch and bend every stepskip timesteps
+const int curvestarttime = 50000;   // print pitch and bend every stepskip timesteps
 const int Lx = 120;          // System size
 const int Ly = 120;          // System size
-const int Lz = 60;          // System size
+const int Lz = 240;          // System size
 
 #define BC 0 // periodic (0) or fixed (1) boundary conditions -- currently only fixed along z
 
@@ -39,7 +39,7 @@ const int    LL=Lx*Ly*Lz;     // total system size
 const double    K = 0.04;       // elastic constant
 const double dt = 0.65;        // integration timestep
 const double thetah = M_PI/11.0;  // heliconical angle
-const double qh = 1.2*(2.0*M_PI/Lz);  // heliconical pitch
+const double qh = 1*(2.0*M_PI/Lz);  // heliconical pitch
 // lambda = (Kq/2) tan(2thetah)
 const double lambda = 0.5*K*qh*tan(2.0*thetah);
 // C = K sin^4(thetah)/cos(2thetah)
@@ -118,5 +118,6 @@ int pt(const int k,const  int l,const  int m);       //convert i,j,k to single i
 int incp(int i, int p, int N);    //increment i with p for periodic boundary
 int mod(int i, int N);   //my own mod fn
 void CurveSmoothing(Link& Curve, double filterlengthscale, int butterworthpower);
+bool KnotpointInBuffer(const knotpoint knotpoint, const int buffer);
 
 #endif //twistbend_H
