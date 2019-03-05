@@ -25,7 +25,7 @@ using namespace std;
 // ============================================================
 
 const int Nmax = 10000;       // Number of timesteps
-const int vtkstepskip = 5000;   // print pitch and bend every stepskip timesteps
+const int vtkstepskip = 1000;   // print pitch and bend every stepskip timesteps
 const int curvestepskip = 500;   // print pitch and bend every stepskip timesteps
 const int curvestarttime = 3000;   // print pitch and bend every stepskip timesteps
 const int Lx = 120;          // System size
@@ -79,6 +79,11 @@ struct knotpoint
     double omegax;
     double omegay;
     double omegaz;
+
+    // the bend vector (mainly for the pushoff)
+    double bx;
+    double by;
+    double bz;
 
     // some other framing
     double e1x;   //position vector x coord

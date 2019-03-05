@@ -198,8 +198,12 @@ void ComputeSolidAngleFraming(double* phi,Link&  Curve)
                     finalvz =vz;
                 }
             }
+            // normalize so the output is a unit vector - our search circle may have a radius which is not 1.
+            double norm = sqrt(finalvx*finalvx + finalvy*finalvy+ finalvz*finalvz);
+            finalvx = finalvx/norm;
+            finalvy = finalvy/norm;
+            finalvz = finalvz/norm;
 
-            // okay now that we have excluded our underisred region, search
             Curve.Components[i].knotcurve[s].omegax = finalvx;
             Curve.Components[i].knotcurve[s].omegay = finalvy;
             Curve.Components[i].knotcurve[s].omegaz = finalvz;
