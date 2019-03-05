@@ -117,5 +117,6 @@ double my_minimisation_function(const gsl_vector* minimum, void* params);
 int pt(const int k,const  int l,const  int m);       //convert i,j,k to single index
 int incp(int i, int p, int N);    //increment i with p for periodic boundary
 int mod(int i, int N);   //my own mod fn
+void CurveSmoothing(Link& Curve, double filterlengthscale, int butterworthpower);
 
 #endif //twistbend_H
