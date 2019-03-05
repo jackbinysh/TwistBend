@@ -9,7 +9,6 @@
 double SolidAngleCalc(const Link& Curve, const viewpoint& View)
 {
     double totalomega = 0;
-    double mindist = 1000.0; // scroll waves
     for(int i=0; i<Curve.Components.size(); i++)
     {
         double Integral = 0;
@@ -179,7 +178,6 @@ void ComputeSolidAngleFraming(double* phi,Link&  Curve)
             }
 
             minphi = -10;
-            double mintheta = -10;
             double finalvx=0 ;
             double finalvy=0;
             double finalvz=0 ;
@@ -189,7 +187,6 @@ void ComputeSolidAngleFraming(double* phi,Link&  Curve)
                 {
                     minphi = testphis[q];
                     double theta = ( ((double)q) / (double(NumTestPoints)) )*2*M_PI;
-                    mintheta = theta;
                     double vx = r*(cos(theta)*ax + sin(theta)*tcax);
                     double vy = r*(cos(theta)*ay + sin(theta)*tcay);
                     double vz = r*(cos(theta)*az + sin(theta)*tcaz);

@@ -32,7 +32,6 @@ const int Lx = 120;          // System size
 const int Ly = 120;          // System size
 const int Lz = 60;          // System size
 
-
 #define BC 0 // periodic (0) or fixed (1) boundary conditions -- currently only fixed along z
 
 // user defined settings
@@ -40,7 +39,7 @@ const int    LL=Lx*Ly*Lz;     // total system size
 const double    K = 0.04;       // elastic constant
 const double dt = 0.65;        // integration timestep
 const double thetah = M_PI/11.0;  // heliconical angle
-const double qh = 2.0*(2.0*M_PI/Lz);  // heliconical pitch
+const double qh = 1.2*(2.0*M_PI/Lz);  // heliconical pitch
 // lambda = (Kq/2) tan(2thetah)
 const double lambda = 0.5*K*qh*tan(2.0*thetah);
 // C = K sin^4(thetah)/cos(2thetah)
@@ -61,6 +60,7 @@ struct parameters
 {
 	gsl_vector *mypt,*t,*e1,*e2;
     likely::TriCubicInterpolator* ucvmag;
+    double sphereradius;
 };
 
 struct knotpoint

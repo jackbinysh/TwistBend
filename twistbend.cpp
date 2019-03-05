@@ -175,11 +175,11 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                             // cross-section looks like double twist and an escaped -1
                             // for -theta these are ordered -1 inside and double twist outside; for +theta it is the other way around
                             // Hopf invariant -1
-                            nx[j] = -sin(M_PI*rho/RR2)*sin(phi-theta); // could also use -theta; they seem to be equivalent in energy
-                            ny[j] = sin(M_PI*rho/RR2)*cos(phi-theta); // could also use -theta
+                            //nx[j] = -sin(M_PI*rho/RR2)*sin(phi-theta); // could also use -theta; they seem to be equivalent in energy
+                            //ny[j] = sin(M_PI*rho/RR2)*cos(phi-theta); // could also use -theta
                             // Hopf invariant +1
-                            //nx[j] = -sin(M_PI*rho/RR2)*sin(phi+theta); // could also use -theta; they seem to be equivalent in energy
-                            //ny[j] = sin(M_PI*rho/RR2)*cos(phi+theta); // could also use -theta
+                            nx[j] = -sin(M_PI*rho/RR2)*sin(phi+theta); // could also use -theta; they seem to be equivalent in energy
+                            ny[j] = sin(M_PI*rho/RR2)*cos(phi+theta); // could also use -theta
                             nz[j] = -cos(M_PI*rho/RR2);
 
                             px[j] = 0;
@@ -675,15 +675,38 @@ void computeBendAndCurlofCirculation(const int n, const double* nx,const double*
 
 void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double* bz, double *magb,double* tx,double* ty,double* tz)
 {
+    /* 
+     *
+     * SETTINGS
+     *
+     */
+    // threshold for detecting another bend zero
+    const double threshold =0.05;
+    // The size of the hemisphere in front of the current point which the code searches for the next point to go to. The data is on a grid of size 1, so it makes no sense for this to be way below 1. some O(1) number here is good.
+    const double sphereradius =1.2;
+    // How many steps on the hemisphere the GSL minimizer should make. Ive found setting this too high makes the code more jagged. I don't reaaaaallly know why, perhaps being really picky about where the minimum is in "noisy" data causes it to run off.
+    const int numgsliterations =3;
+    // the initial stepsize for the GSL minimzer. Something below 1, I use something well below it.
+    const double initialgslstepsize = 0.05;
+    // how close shoud our current point be to the initial point before we terminate and close the loop? Again, something O(1), I don't have an amazing feel.
+    const double terminationdistance = 3;
+    // when we add the first point, we will be close to the start point and we will hit the termination condition above. To avoid this I just require us to be some number of points along the tracing before termination is allowed. This is the number of points
+    const int minnumpoints = 30;
+    // when we do the two push offs, need to specify how far to push. roughly O(1) numbers again.
+    double firstpushdist = 2;
+    double secondpushdist = 5;
+    /* 
+     *
+     * 
+     *
+     */
+
     // initialise the tricubic interpolator for ucvmag
     likely::TriCubicInterpolator interpolatedmagb(magb, 1, Lx,Ly,Lz);
 
     // an array holding points we have already visited, so we dont keep tracing out the same bend zero 
     vector<int> marked(Lx*Ly*Lz,0);
 
-    // settings
-    double detectthreshold =0.02;
-    double markedthreshold =0.02;
 
     // GSL initialization
     const gsl_multimin_fminimizer_type *Type;
@@ -716,7 +739,7 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
             }
         }
 
-        if(bmin>detectthreshold)knotexists = false;
+        if(bmin>threshold)knotexists = false;
 
         if(knotexists)
         {
@@ -729,7 +752,6 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
             int s=1;
             bool lastpoint=false;
             bool finish=false;
-            /*calculate local direction of grad u x grad v (the tangent to the knot curve) at point s-1, then move to point s by moving along tangent + unit confinement force*/
             while (!finish)
             {   
 
@@ -808,7 +830,6 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
                 Curve.Components[c].knotcurve[s-1].e2y = e2y;
                 Curve.Components[c].knotcurve[s-1].e2z = e2z;
 
-                /* ADDING A NEW POINT BY FLOWING ALONG THE INTEGRAL CURVE */
                 if(!lastpoint)
                 {
                     //pop a new point on the stack
@@ -836,6 +857,7 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
                     gsl_vector_set (e2, 2, e2z);
 
                     struct parameters params; struct parameters* pparams = &params;
+                    pparams->sphereradius = sphereradius;
                     pparams->ucvmag=&interpolatedmagb;
                     pparams->mypt = mypt; pparams->t = t;pparams->e1=e1; pparams->e2=e2;
                     // settings
@@ -845,8 +867,8 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
                     F.params = (void*) pparams;
                     // stepsize and origin
                     gsl_vector* stepsize = gsl_vector_alloc (2);
-                    gsl_vector_set (stepsize, 0, 0.05);
-                    gsl_vector_set (stepsize, 1, 0.05);
+                    gsl_vector_set (stepsize, 0, initialgslstepsize);
+                    gsl_vector_set (stepsize, 1, initialgslstepsize);
 
                     gsl_vector* minimum = gsl_vector_alloc (2);
                     gsl_vector_set (minimum, 0, 0);
@@ -869,7 +891,7 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
                         status = gsl_multimin_test_size (minimizersize, 1e-10);
 
                     }
-                    while (status == GSL_CONTINUE && iter <3);
+                    while (status == GSL_CONTINUE && iter <numgsliterations);
 
                     double x =gsl_vector_get(minimizerstate->x, 0);
                     double y =gsl_vector_get(minimizerstate->x, 1);
@@ -899,7 +921,7 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
                 double zdiff = Curve.Components[c].knotcurve[0].zcoord - Curve.Components[c].knotcurve[s].zcoord;
                 // when we terminate, get the stats for the last point but dont add another on
                 if(lastpoint)finish=true;
-                if( (sqrt(xdiff*xdiff + ydiff*ydiff + zdiff*zdiff) <3 && s > 30 )||s>2000)
+                if( (sqrt(xdiff*xdiff + ydiff*ydiff + zdiff*zdiff) < terminationdistance && s > minnumpoints )||s>2000)
                 {
                     lastpoint = true;
                 }
@@ -935,7 +957,7 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
                                         for(int kinc=-1; kinc<=1; kinc++)   //Central difference
                                         {
                                             int neighboringn = pt(k+kinc,l+linc,m+minc);
-                                            if(marked[neighboringn] == 0 && magb[neighboringn] < markedthreshold) marked[neighboringn] = -3;
+                                            if(marked[neighboringn] == 0 && magb[neighboringn] < threshold) marked[neighboringn] = -3;
                                         }
                                     }
                                 }
@@ -1047,8 +1069,6 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
     likely::TriCubicInterpolator interpolatedbx(bx, 1, Lx,Ly,Lz);
     likely::TriCubicInterpolator interpolatedby(by, 1, Lx,Ly,Lz);
     likely::TriCubicInterpolator interpolatedbz(bz, 1, Lx,Ly,Lz);
-    double firstpushdist = 2;
-    double secondpushdist = 5;
     for(int c=0; c<Curve.Components.size(); c++)
     {
         PushOffCurve.Components.push_back(Curve.Components[c]);
@@ -1090,9 +1110,8 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
 
 double my_minimisation_function(const gsl_vector* minimum, void* params)
 {
-    double sphereradius = 1.2;
-
     struct parameters* myparameters = (struct parameters *) params;
+    double sphereradius = myparameters->sphereradius;
     likely::TriCubicInterpolator* interpolateducvmag = myparameters->ucvmag;
     gsl_vector* temppt = gsl_vector_alloc (3);
     gsl_vector* tempt = gsl_vector_alloc (3);
