@@ -29,17 +29,12 @@ int main(int argc, char** argv)
     double* ny=new double[LL];
     double* nz=new double[LL];
 
-    double* px=new double[LL];
-    double* py=new double[LL];
-    double* pz=new double[LL];
-
-    double* pmag=new double[LL];
-
     double* bx=new double[LL];
     double* by=new double[LL];
     double* bz=new double[LL];
 
     double* bmag=new double[LL];
+    double* twist=new double[LL];
 
     double* tx=new double[LL];
     double* ty=new double[LL];
@@ -48,6 +43,10 @@ int main(int argc, char** argv)
     double* hx=new double[LL];
     double* hy=new double[LL];
     double* hz=new double[LL];
+
+    double* px=new double[LL];
+    double* py=new double[LL];
+    double* pz=new double[LL];
 
     double* hpx=new double[LL];
     double* hpy=new double[LL];
@@ -60,7 +59,7 @@ int main(int argc, char** argv)
     setupmask(mask);
     cout << "starting simulation" << endl;
 
-#pragma omp parallel default(none) shared(nx,ny,nz,px,py,pz,pmag, hx,hy,hz,hpx,hpy,hpz, bx,by,bz,bmag, tx,ty,tz, n,mask,cout)
+#pragma omp parallel default(none) shared(nx,ny,nz, hx,hy,hz,px,py,pz,hpx,hpy,hpz, bx,by,bz,bmag, tx,ty,tz,twist, n,mask,cout)
     {
         while(n<=Nmax)
         {
@@ -74,14 +73,13 @@ int main(int argc, char** argv)
                 if (n%vtkstepskip==0)
                 {
                     cout << "writing VTK files at timestep " << n << endl;
-                    computeBendAndCurlofCirculation(n,nx,ny,nz,bx,by,bz,bmag,px,py,pz,pmag, tx,ty,tz);
-                    writeVTKfiles(n,nx,ny,nz,px,py,pz,bx,by,bz,tx,ty,tz);       // output VTK files for use with ParaView
-
+                    computeBendTwistAndCurlofCirculation(n,nx,ny,nz,bx,by,bz,bmag,twist,tx,ty,tz);
+                    writeVTKfiles(n,nx,ny,nz,px,py,pz,bx,by,bz,tx,ty,tz,twist);       // output VTK files for use with ParaView
                 }
                 if ((n>=curvestarttime) &&(n%curvestepskip==0))
                 {
                     cout << "writing the bend zeros at timestep " << n << endl;
-                    computeBendAndCurlofCirculation(n,nx,ny,nz,bx,by,bz,bmag,px,py,pz,pmag, tx,ty,tz);
+                    computeBendTwistAndCurlofCirculation(n,nx,ny,nz,bx,by,bz,bmag,twist, tx,ty,tz);
                     Link Curve;
                     Link PushOffCurve;
                     FindBendZeros(Curve,PushOffCurve,bx,by,bz, bmag,tx,ty,tz,mask);
@@ -104,7 +102,6 @@ int main(int argc, char** argv)
     delete py;
     delete pz;
 
-    delete pmag;
 
     delete bx;
     delete by;
@@ -522,13 +519,10 @@ void update(double* nx, double* ny,double* nz,double* px, double* py,double* pz,
 
 } // end update
 
-void computeBendAndCurlofCirculation(const int n, const double* nx,const double* ny,const double* nz, double* bx, double* by, double* bz, double* bmag, const double* px, const double* py, const double* pz, double* pmag, double* tx, double* ty, double* tz)
+void computeBendTwistAndCurlofCirculation(const int n, const double* nx,const double* ny,const double* nz, double* bx, double* by, double* bz, double* bmag, double* twist,  double* tx, double* ty, double* tz)
 {
 
-    // first up, compute magp
     int j;
-    for (j=0;j<LL;j++) pmag[j] = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
-
     // arrays storing the circulaiton, which we will take the curl of
     double* cx=new double[LL];
     double* cy=new double[LL];
@@ -593,6 +587,9 @@ void computeBendAndCurlofCirculation(const int n, const double* nx,const double*
         by[j] = nx[j]*Dxny + ny[j]*Dyny + nz[j]*Dzny;
         bz[j] = nx[j]*Dxnz + ny[j]*Dynz + nz[j]*Dznz;
         bmag[j] = sqrt(bx[j]*bx[j]+by[j]*by[j]+bz[j]*bz[j]);
+
+        // calculate twist
+        twist[j] = nx[j]*(Dynz-Dzny) + ny[j]*(Dznx-Dxnz) + nz[j]*(Dxny-Dynx);
 
         // keep track of boundaries
         k++;
