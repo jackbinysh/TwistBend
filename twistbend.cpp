@@ -694,7 +694,7 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
     // when we add the first point, we will be close to the start point and we will hit the termination condition above. To avoid this I just require us to be some number of points along the tracing before termination is allowed. This is the number of points
     const int minnumpoints = 30;
     // specify a lengthscale to kill fluctuations shorter than, for the curve smoothing. Some O(1- 10) numer
-    const double filterlengthscale=30;
+    const double filterlength=1;
 // the power in the butterworth filter which does the low pass filter. larger powers mean a sharper requency cutoff, but more ringing etc.
     const int butterworthpower=8;
     // when we do the two push offs, need to specify how far to push. roughly O(1) numbers again.
@@ -760,6 +760,8 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
             bool BoundaryTerminationCondition=false;
             double flowsign=1.0;
             int bufferhits=0;
+            // initially assume the curve we are tracing will close
+            Curve.Components[c].closed =true;
             while (!finish)
             {   
 
@@ -946,6 +948,7 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
                         {
                             BoundaryTerminationCondition=true;
                             Curve.Components[c].knotcurve.pop_back();
+                            Curve.Components[c].closed = false;
                         }
                     }
                 }
@@ -1084,13 +1087,63 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
         }
     }
 
-    CurveSmoothing(Curve,filterlengthscale,butterworthpower);
-    CurveSmoothing(PushOffCurve,filterlengthscale,butterworthpower);
+    CurveSmoothing(Curve,filterlength);
+    CurveSmoothing(PushOffCurve,filterlength);
 }
 
 // curve smoothing via a low pass filter
-void CurveSmoothing(Link& Curve, double filterlengthscale, int butterworthpower) 
+void CurveSmoothing(Link& Curve, int filterlength) 
 {
+    // for now this is just a moving average filter. In the future it could be a blackman windowed sinc etc. who knows!?
+    for(int c=0; c<Curve.Components.size(); c++)
+    {
+
+        int NP = Curve.Components[c].knotcurve.size();
+        vector<double> zeropaddedcoord(NP+(filterlength-1),0);
+        vector<double> smoothedzeropaddedcoord(NP+filterlength-1,0);
+        int startindex = (filterlength-1)/2;
+        int endindex = NP+startindex-1; 
+            
+        for(int k=1; k<4; k++)
+        {
+            // reset the padded arrays
+            for(int i=0; i<=zeropaddedcoord.size(); i++)
+            {
+                zeropaddedcoord[i] =  0;
+                smoothedzeropaddedcoord[i] = 0;
+            }
+
+            switch(k)
+            {
+                case 1 :
+                    for(int i=0; i<=NP; i++) zeropaddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].xcoord ; break;
+                case 2 :
+                    for(int i=0; i<=NP; i++) zeropaddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].ycoord ; break;
+                case 3 :
+                    for(int i=0; i<=NP; i++) zeropaddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].zcoord ; break;
+            }
+            // okay apply the filter
+            for(int i=startindex; i<=endindex; i++)
+            {
+                for(int j =-(filterlength-1)/2; j <=(filterlength-1)/2;j++)
+                {
+                        smoothedzeropaddedcoord[i] += (1/((double)filterlength))*zeropaddedcoord[i+j]; 
+                }
+            }
+            // copy back in
+            switch(k)
+            {
+                case 1 :
+                    for(int i=startindex; i<=endindex; i++) Curve.Components[c].knotcurve[i-startindex].xcoord = smoothedzeropaddedcoord[i] ; break;
+                case 2 :
+                    for(int i=startindex; i<=endindex; i++) Curve.Components[c].knotcurve[i-startindex].ycoord = smoothedzeropaddedcoord[i] ; break;
+                case 3 :
+                    for(int i=startindex; i<=endindex; i++) Curve.Components[c].knotcurve[i-startindex].zcoord = smoothedzeropaddedcoord[i] ; break;
+            }
+               
+        }
+    }
+    /*
     for(int c=0; c<Curve.Components.size(); c++)
     {
         int NP = Curve.Components[c].knotcurve.size();
@@ -1141,6 +1194,7 @@ void CurveSmoothing(Link& Curve, double filterlengthscale, int butterworthpower)
             }
         }
     }
+    */
 }
 
 double my_minimisation_function(const gsl_vector* minimum, void* params)
