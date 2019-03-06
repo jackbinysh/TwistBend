@@ -27,7 +27,7 @@ using namespace std;
 const int Nmax = 50000;       // Number of timesteps
 const int vtkstepskip = 1000;   // print pitch and bend every stepskip timesteps
 const int curvestepskip = 1000;   // print pitch and bend every stepskip timesteps
-const int curvestarttime = 6000;   // print pitch and bend every stepskip timesteps
+const int curvestarttime = 10000;   // print pitch and bend every stepskip timesteps
 const int Lx = 60;          // System size
 const int Ly = 60;          // System size
 const int Lz = 60;          // System size
@@ -114,12 +114,13 @@ struct Link
 void startconfig(int& n ,double* nx, double* ny,double* nz,double* px, double* py,double* pz);
 void update(double* nx, double* ny,double* nz,double* px, double* py,double* pz, double* hx, double* hy,double* hz,double* hpx, double* hpy,double* hpz);
 void computeBendAndCurlofCirculation(const int n, const double* nx,const double* ny,const double* nz, double* bx, double* by, double* bz, double* bmag, const double* px, const double* py, const double* pz, double* pmag, double* tx, double* ty, double* tz);
-void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double* bz, double *magb,double* tx,double* ty,double* tz);
+void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double* bz, double *magb,double* tx,double* ty,double* tz, bool* mask);
 double my_minimisation_function(const gsl_vector* minimum, void* params);
 int pt(const int k,const  int l,const  int m);       //convert i,j,k to single index
 int incp(int i, int p, int N);    //increment i with p for periodic boundary
 int mod(int i, int N);   //my own mod fn
 void CurveSmoothing(Link& Curve, int filterlength);
-bool KnotpointInBuffer(const knotpoint knotpoint, const int buffer);
+bool KnotpointInMask(const knotpoint knotpoint, const bool* mask);
+void setupmask(bool* mask);
 
 #endif //twistbend_H

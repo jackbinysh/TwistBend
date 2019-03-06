@@ -53,11 +53,14 @@ int main(int argc, char** argv)
     double* hpy=new double[LL];
     double* hpz=new double[LL];
 
+    bool* mask=new bool[LL];
+
     int n =0;
     startconfig(n, nx,ny,nz,px,py,pz);
+    setupmask(mask);
     cout << "starting simulation" << endl;
 
-#pragma omp parallel default(none) shared(nx,ny,nz,px,py,pz,pmag, hx,hy,hz,hpx,hpy,hpz, bx,by,bz,bmag, tx,ty,tz, n,cout)
+#pragma omp parallel default(none) shared(nx,ny,nz,px,py,pz,pmag, hx,hy,hz,hpx,hpy,hpz, bx,by,bz,bmag, tx,ty,tz, n,mask,cout)
     {
         while(n<=Nmax)
         {
@@ -81,7 +84,7 @@ int main(int argc, char** argv)
                     computeBendAndCurlofCirculation(n,nx,ny,nz,bx,by,bz,bmag,px,py,pz,pmag, tx,ty,tz);
                     Link Curve;
                     Link PushOffCurve;
-                    FindBendZeros(Curve,PushOffCurve,bx,by,bz, bmag,tx,ty,tz);
+                    FindBendZeros(Curve,PushOffCurve,bx,by,bz, bmag,tx,ty,tz,mask);
                     print_Curve(n,Curve, "vtk_bendzeros");
                     print_Curve(n,PushOffCurve, "vtk_bendzerosPushOff");
 
@@ -122,7 +125,25 @@ int main(int argc, char** argv)
     delete hpz;
 } // end main
 
-/**********************************************************************/
+void setupmask(bool* mask)
+{
+    // currently set up to just mask off the edge of the box
+    int buffer =4;
+    for(int k=0;k<Lx;k++)
+    {
+        for(int l=0; l<Ly; l++)
+        {
+            for(int m=0; m<Lz; m++) 
+            {
+                mask[pt(k,l,m)]=false;
+                bool xoverflow = (k < buffer) || (k > Lx - buffer);
+                bool yoverflow = (l < buffer) || (l > Ly - buffer);
+                bool zoverflow = (m < buffer) || ( m> Lz - buffer);
+                if(xoverflow || yoverflow || zoverflow){ mask[pt(k,l,m)] =true;}
+            }
+        }
+    }
+}
 void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* py,double* pz)
 {
     switch(InitialisationMethod)
@@ -700,14 +721,13 @@ void computeBendAndCurlofCirculation(const int n, const double* nx,const double*
     delete cz;
 }
 
-void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double* bz, double *magb,double* tx,double* ty,double* tz)
+void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double* bz, double *magb,double* tx,double* ty,double* tz, bool* mask)
 {
     /* 
      *
      * SETTINGS
      *
      */
-    const int buffersize=4;
     // threshold for detecting another bend zero
     const double threshold =0.05;
     // The size of the hemisphere in front of the current point which the code searches for the next point to go to. The data is on a grid of size 1, so it makes no sense for this to be way below 1. some O(1) number here is good.
@@ -750,14 +770,14 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
     {
         double   bmin = 10000000;// I dunno some big number 
         int kmin=-1,lmin=-1,mmin=-1;
-        for(int k=buffersize;k<Lx-buffersize;k++)
+        for(int k=0;k<Lx;k++)
         {
-            for(int l=buffersize; l<Ly-buffersize; l++)
+            for(int l=0; l<Ly; l++)
             {
-                for(int m=buffersize; m<Lz-buffersize; m++) 
+                for(int m=0; m<Lz; m++) 
                 {
                     int n = pt(k,l,m);
-                    if( magb[n] < bmin && marked[n]==0)
+                    if( magb[n] < bmin && marked[n]==0 && mask[n]==0)
                     {
                         bmin = magb[n];
                         kmin = k;
@@ -952,7 +972,7 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
                     marked[pt((int) Curve.Components[c].knotcurve[s].xcoord,(int) Curve.Components[c].knotcurve[s].ycoord,(int) Curve.Components[c].knotcurve[s].zcoord)]=-1;
 
                     // did we just go into the buffer region around the edge of the box?
-                    if(KnotpointInBuffer(Curve.Components[c].knotcurve[s], buffersize))
+                    if(KnotpointInMask(Curve.Components[c].knotcurve[s],mask ))
                     {
                         bufferhits++;
                         if(bufferhits==1)
@@ -1210,13 +1230,27 @@ double my_minimisation_function(const gsl_vector* minimum, void* params)
     return value;
 }
 
-bool KnotpointInBuffer(const knotpoint knotpoint, const int buffer)
+bool KnotpointInMask(const knotpoint knotpoint, const bool* mask)
 {
-    bool xoverflow = (knotpoint.xcoord < buffer) || (knotpoint.xcoord > Lx - buffer);
-    bool yoverflow = (knotpoint.ycoord < buffer) || (knotpoint.ycoord > Ly - buffer);
-    bool zoverflow = (knotpoint.zcoord < buffer) || (knotpoint.zcoord > Lz - buffer);
+    // our mask is defined on gridpoints. We define being "in the mask" as being inside a cube with 1's on all its verices
 
-    return xoverflow || yoverflow || zoverflow; 
+    // the (x,y,z) value of the bottom left gridpoint corresponding to the cube our point is inside
+    int idwn = (int) (knotpoint.xcoord);
+    int jdwn = (int) (knotpoint.ycoord);
+    int kdwn = (int) (knotpoint.zcoord);
+
+    bool inmask = mask[pt(idwn,jdwn,kdwn)];
+    for(int iinc=0;iinc<=1;iinc++)
+    {
+        for(int jinc=0;jinc<=1;jinc++)
+        {
+            for(int kinc=0;kinc<=1;kinc++)
+                { 
+                   inmask = inmask && mask[pt(idwn+iinc,jdwn+jinc,kdwn+kinc)]; 
+                }
+        }
+    }
+    return inmask;
 }
 
 // some little functions which go back and forth from point to index
