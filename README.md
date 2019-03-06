@@ -39,7 +39,6 @@ All the settings are at the top of the function, each commented by their functio
 - how close shoud our current point be to the initial point before we terminate and close the loop? Again, something O(1), I don't have an amazing feel. (const double terminationdistance;)
 - when we add the first point, we will be close to the start point and we will hit the termination condition above. To avoid this I just require us to be some number of points along the tracing before termination is allowed. This is the number of points (const int minnumpoints;)
 - specify a lengthscale to kill fluctuations shorter than, for the curve smoothing. Some O(1- 10) numer (const double filterlengthscale=30;)
-- the power in the butterworth filter which does the low pass filter. larger powers mean a sharper requency cutoff, but more ringing etc. const int butterworthpower=8;
 - when we do the two push offs, need to specify how far to push. roughly O(1) numbers again.  (double firstpushdist; double secondpushdist;)
 
 ## Outline of how the code works
