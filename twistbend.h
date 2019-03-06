@@ -26,11 +26,11 @@ using namespace std;
 
 const int Nmax = 50000;       // Number of timesteps
 const int vtkstepskip = 1000;   // print pitch and bend every stepskip timesteps
-const int curvestepskip = 500;   // print pitch and bend every stepskip timesteps
-const int curvestarttime = 50000;   // print pitch and bend every stepskip timesteps
-const int Lx = 120;          // System size
-const int Ly = 120;          // System size
-const int Lz = 240;          // System size
+const int curvestepskip = 1000;   // print pitch and bend every stepskip timesteps
+const int curvestarttime = 6000;   // print pitch and bend every stepskip timesteps
+const int Lx = 60;          // System size
+const int Ly = 60;          // System size
+const int Lz = 60;          // System size
 
 #define BC 0 // periodic (0) or fixed (1) boundary conditions -- currently only fixed along z
 
@@ -101,6 +101,8 @@ struct knotcurve
 {
     std::vector<knotpoint> knotcurve; // the actual data of the curve
     // global data for the knot component
+    // is this an open curve, i.e one which terminates at the boundaries, or not?
+    bool closed;
 };
 
 struct Link
@@ -117,7 +119,7 @@ double my_minimisation_function(const gsl_vector* minimum, void* params);
 int pt(const int k,const  int l,const  int m);       //convert i,j,k to single index
 int incp(int i, int p, int N);    //increment i with p for periodic boundary
 int mod(int i, int N);   //my own mod fn
-void CurveSmoothing(Link& Curve, double filterlengthscale, int butterworthpower);
+void CurveSmoothing(Link& Curve, int filterlength);
 bool KnotpointInBuffer(const knotpoint knotpoint, const int buffer);
 
 #endif //twistbend_H

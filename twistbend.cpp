@@ -488,7 +488,7 @@ void computeBendAndCurlofCirculation(const int n, const double* nx,const double*
     int xup,xdwn,yup,ydwn,zup,zdwn;
     double Dxnx,Dxny,Dxnz,Dynx,Dyny,Dynz,Dznx,Dzny,Dznz;
     double Dxbx,Dxby,Dxbz,Dybx,Dyby,Dybz,Dzbx,Dzby,Dzbz;
-    double Dxcx,Dxcy,Dxcz,Dycx,Dycy,Dycz,Dzcx,Dzcy,Dzcz;
+    double Dxcy,Dxcz,Dycx,Dycz,Dzcx,Dzcy;
 
     k=l=m=0;
     for (j=0;j<LL;j++) 
@@ -638,28 +638,23 @@ void computeBendAndCurlofCirculation(const int n, const double* nx,const double*
 #endif
 
         // calculate first order derivatives
-        Dxcx = (cx[xup]-cx[xdwn])/2.0;
         Dycx = (cx[yup]-cx[ydwn])/2.0;
         Dzcx = (cx[zup]-cx[zdwn])/2.0;
 
         Dxcy = (cy[xup]-cy[xdwn])/2.0;
-        Dycy = (cy[yup]-cy[ydwn])/2.0;
         Dzcy = (cy[zup]-cy[zdwn])/2.0;
 
         Dxcz = (cz[xup]-cz[xdwn])/2.0;
         Dycz = (cz[yup]-cz[ydwn])/2.0;
-        Dzcz = (cz[zup]-cz[zdwn])/2.0;
 
 #if BC // one-sided derivates at boundaries
         if (m==0) {
             Dzcx = (-3.0*cx[j]+4.0*cx[zup]-cx[zdwn])/2.0;
             Dzcy = (-3.0*cy[j]+4.0*cy[zup]-cy[zdwn])/2.0;
-            Dzcz = (-3.0*cz[j]+4.0*cz[zup]-cz[zdwn])/2.0;
         }
         if (m==Lz-1) {
             Dzcx = (3.0*cx[j]-4.0*cx[zdwn]+cx[zup])/2.0;
             Dzcy = (3.0*cy[j]-4.0*cy[zdwn]+cy[zup])/2.0;
-            Dzcz = (3.0*cz[j]-4.0*cz[zdwn]+cz[zup])/2.0;
         }
 #endif
         tx[j] = Dycz - Dzcy;
@@ -694,9 +689,7 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
     // when we add the first point, we will be close to the start point and we will hit the termination condition above. To avoid this I just require us to be some number of points along the tracing before termination is allowed. This is the number of points
     const int minnumpoints = 30;
     // specify a lengthscale to kill fluctuations shorter than, for the curve smoothing. Some O(1- 10) numer
-    const double filterlength=1;
-// the power in the butterworth filter which does the low pass filter. larger powers mean a sharper requency cutoff, but more ringing etc.
-    const int butterworthpower=8;
+    const double filterlength=3;
     // when we do the two push offs, need to specify how far to push. roughly O(1) numbers again.
     double firstpushdist = 2;
     double secondpushdist = 5;
@@ -937,8 +930,8 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
                             // grab that second last point 
                             knotpoint newstartingpoint = Curve.Components[c].knotcurve[s];
                             // erase 
-                             Curve.Components[c].knotcurve.clear();
-                             // put the start point back on
+                            Curve.Components[c].knotcurve.clear();
+                            // put the start point back on
                             Curve.Components[c].knotcurve.push_back(newstartingpoint);
                             // reset s, set the flow sign to reverse 
                             s =0;
@@ -1088,7 +1081,7 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
     }
 
     CurveSmoothing(Curve,filterlength);
-    CurveSmoothing(PushOffCurve,filterlength);
+    //CurveSmoothing(PushOffCurve,filterlength);
 }
 
 // curve smoothing via a low pass filter
@@ -1099,102 +1092,108 @@ void CurveSmoothing(Link& Curve, int filterlength)
     {
 
         int NP = Curve.Components[c].knotcurve.size();
-        vector<double> zeropaddedcoord(NP+(filterlength-1),0);
-        vector<double> smoothedzeropaddedcoord(NP+filterlength-1,0);
+        vector<double> paddedcoord(NP+(filterlength-1),0);
+        vector<double> smoothedpaddedcoord(NP+filterlength-1,0);
         int startindex = (filterlength-1)/2;
         int endindex = NP+startindex-1; 
-            
+
         for(int k=1; k<4; k++)
         {
             // reset the padded arrays
-            for(int i=0; i<=zeropaddedcoord.size(); i++)
+            for(int i=0; i<=paddedcoord.size(); i++)
             {
-                zeropaddedcoord[i] =  0;
-                smoothedzeropaddedcoord[i] = 0;
+                paddedcoord[i] =  0;
+                smoothedpaddedcoord[i] = 0;
             }
 
             switch(k)
             {
                 case 1 :
-                    for(int i=0; i<=NP; i++) zeropaddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].xcoord ; break;
+                    {for(int i=0; i<=NP; i++) {paddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].xcoord ;} break;}
                 case 2 :
-                    for(int i=0; i<=NP; i++) zeropaddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].ycoord ; break;
+                    {for(int i=0; i<=NP; i++) {paddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].ycoord ;} break;}
                 case 3 :
-                    for(int i=0; i<=NP; i++) zeropaddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].zcoord ; break;
+                    {for(int i=0; i<=NP; i++) {paddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].zcoord ;} break;}
             }
+
+            // im going to pad the ends of the array, not with zeros, but with the end values repeated
+            for(int i=0;i<startindex;i++){paddedcoord[i]=paddedcoord[startindex];}
+            for(int i=endindex;i<paddedcoord.size();i++){paddedcoord[i]=paddedcoord[endindex];}
+
             // okay apply the filter
             for(int i=startindex; i<=endindex; i++)
             {
                 for(int j =-(filterlength-1)/2; j <=(filterlength-1)/2;j++)
                 {
-                        smoothedzeropaddedcoord[i] += (1/((double)filterlength))*zeropaddedcoord[i+j]; 
+                    smoothedpaddedcoord[i] += (1/((double)filterlength))*paddedcoord[i+j];
                 }
             }
             // copy back in
             switch(k)
             {
                 case 1 :
-                    for(int i=startindex; i<=endindex; i++) Curve.Components[c].knotcurve[i-startindex].xcoord = smoothedzeropaddedcoord[i] ; break;
+                    {for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].xcoord = smoothedpaddedcoord[i] ;} break;}
                 case 2 :
-                    for(int i=startindex; i<=endindex; i++) Curve.Components[c].knotcurve[i-startindex].ycoord = smoothedzeropaddedcoord[i] ; break;
+                {for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].ycoord = smoothedpaddedcoord[i] ;} break;}
                 case 3 :
-                    for(int i=startindex; i<=endindex; i++) Curve.Components[c].knotcurve[i-startindex].zcoord = smoothedzeropaddedcoord[i] ; break;
+                   { for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].zcoord = smoothedpaddedcoord[i] ;} break;}
             }
-               
+
         }
     }
     /*
-    for(int c=0; c<Curve.Components.size(); c++)
+       for(int c=0; c<Curve.Components.size(); c++)
+       {
+       int NP = Curve.Components[c].knotcurve.size();
+       vector<double> coord(NP);
+       gsl_fft_real_wavetable * real;
+       gsl_fft_halfcomplex_wavetable * hc;
+       gsl_fft_real_workspace * work;
+       work = gsl_fft_real_workspace_alloc (NP);
+       real = gsl_fft_real_wavetable_alloc (NP);
+       hc = gsl_fft_halfcomplex_wavetable_alloc (NP);
+       for(int j=1; j<4; j++)
+       {
+       switch(j)
+       {
+       case 1 :
+       for(int i=0; i<NP; i++) coord[i] =  Curve.Components[c].knotcurve[i].xcoord ; break;
+       case 2 :
+       for(int i=0; i<NP; i++) coord[i] =  Curve.Components[c].knotcurve[i].ycoord ; break;
+       case 3 :
+       for(int i=0; i<NP; i++) coord[i] =  Curve.Components[c].knotcurve[i].zcoord ; break;
+       }
+       double* data = coord.data();
+    // take the fft
+    gsl_fft_real_transform (data, 1, NP, real, work);
+    // 21/11/2016: make our low pass filter. To apply our filter. we should sample frequencies fn = n/Delta N , n = -N/2 ... N/2
+    // this is discretizing the nyquist interval, with extreme frequency ~1/2Delta.
+    // to cut out the frequencies of grid fluctuation size and larger we need a lengthscale Delta to
+    // plug in above. im doing a rough length calc below, this might be overkill.
+    // at the moment its just a hard filter, we can choose others though.
+    // compute a rough length to set scale
+    double filter;
+    const double cutoff = 2*M_PI*(NP/filterlengthscale) ;
+    for (int i = 0; i < NP; ++i)
     {
-        int NP = Curve.Components[c].knotcurve.size();
-        vector<double> coord(NP);
-        gsl_fft_real_wavetable * real;
-        gsl_fft_halfcomplex_wavetable * hc;
-        gsl_fft_real_workspace * work;
-        work = gsl_fft_real_workspace_alloc (NP);
-        real = gsl_fft_real_wavetable_alloc (NP);
-        hc = gsl_fft_halfcomplex_wavetable_alloc (NP);
-        for(int j=1; j<4; j++)
-        {
-            switch(j)
-            {
-                case 1 :
-                    for(int i=0; i<NP; i++) coord[i] =  Curve.Components[c].knotcurve[i].xcoord ; break;
-                case 2 :
-                    for(int i=0; i<NP; i++) coord[i] =  Curve.Components[c].knotcurve[i].ycoord ; break;
-                case 3 :
-                    for(int i=0; i<NP; i++) coord[i] =  Curve.Components[c].knotcurve[i].zcoord ; break;
-            }
-            double* data = coord.data();
-            // take the fft
-            gsl_fft_real_transform (data, 1, NP, real, work);
-            // 21/11/2016: make our low pass filter. To apply our filter. we should sample frequencies fn = n/Delta N , n = -N/2 ... N/2
-            // this is discretizing the nyquist interval, with extreme frequency ~1/2Delta.
-            // to cut out the frequencies of grid fluctuation size and larger we need a lengthscale Delta to
-            // plug in above. im doing a rough length calc below, this might be overkill.
-            // at the moment its just a hard filter, we can choose others though.
-            // compute a rough length to set scale
-            double filter;
-            const double cutoff = 2*M_PI*(NP/filterlengthscale) ;
-            for (int i = 0; i < NP; ++i)
-            {
-                filter = 1/sqrt(1+pow((i/cutoff),butterworthpower));
-                data[i] *= filter;
-            };
-            // transform back
-            gsl_fft_halfcomplex_inverse (data, 1, NP, hc, work);
-            switch(j)
-            {
-                case 1 :
-                    for(int i=0; i<NP; i++)  Curve.Components[c].knotcurve[i].xcoord = coord[i] ; break;
-                case 2 :
-                    for(int i=0; i<NP; i++)  Curve.Components[c].knotcurve[i].ycoord = coord[i] ; break;
-                case 3 :
-                    for(int i=0; i<NP; i++)  Curve.Components[c].knotcurve[i].zcoord = coord[i] ; break;
-            }
-        }
+    filter = 1/sqrt(1+pow((i/cutoff),butterworthpower));
+    data[i] *= filter;
+    };
+    // transform back
+    gsl_fft_halfcomplex_inverse (data, 1, NP, hc, work);
+    switch(j)
+    {
+    case 1 :
+    for(int i=0; i<NP; i++)  Curve.Components[c].knotcurve[i].xcoord = coord[i] ; break;
+    case 2 :
+    for(int i=0; i<NP; i++)  Curve.Components[c].knotcurve[i].ycoord = coord[i] ; break;
+    case 3 :
+    for(int i=0; i<NP; i++)  Curve.Components[c].knotcurve[i].zcoord = coord[i] ; break;
+    }
+    }
     }
     */
+    return;
 }
 
 double my_minimisation_function(const gsl_vector* minimum, void* params)

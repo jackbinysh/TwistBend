@@ -20,11 +20,11 @@ int file_read_ASCII( double *nx,double *ny, double *nz, double *px, double *py,d
                 int tempLx,tempLy,tempLz;
                 ss << temp;
                 ss >> tempLx >> tempLy >>tempLz ;
-               if((tempLx!= Lx) ||(tempLy!= Ly)||(tempLz!= Lz))
-               {
+                if((tempLx!= Lx) ||(tempLy!= Ly)||(tempLz!= Lz))
+                {
                     cout << "Box dimensions dont match\n";
                     return 1;
-               }
+                }
             }
         }
         else
@@ -176,9 +176,20 @@ void print_Curve( double t, Link& Curve, string Name)
 
         knotout << "\n\nCELLS " << n << ' ' << 3*n << '\n';
 
-        for(i=0; i<n; i++)
+        if(Curve.Components[c].closed)
         {
-            knotout << 2 << ' ' << i << ' ' << (i+1)%n << '\n';
+            for(i=0; i<n; i++)
+            {
+                knotout << 2 << ' ' << i << ' ' << (i+1)%n << '\n';
+            }
+        }
+        else
+        {
+            for(i=0; i<n-1; i++)
+            {
+                knotout << 2 << ' ' << i << ' ' << (i+1) << '\n';
+            }
+            knotout << 2 << ' ' << n-1 << ' ' << n-1 << '\n';
         }
 
         knotout << "\n\nCELL_TYPES " << n << '\n';
@@ -196,7 +207,7 @@ void print_Curve( double t, Link& Curve, string Name)
             knotout << Curve.Components[c].knotcurve[i].tx << ' ' << Curve.Components[c].knotcurve[i].ty << ' ' << Curve.Components[c].knotcurve[i].tz << '\n';
         }
 
-        
+
         knotout << "\nVECTORS Omega float\n";
         for(i=0; i<n; i++)
         {
@@ -209,7 +220,7 @@ void print_Curve( double t, Link& Curve, string Name)
         {
             knotout << Curve.Components[c].knotcurve[i].length << '\n';
         }
-        
+
         knotout.close();
     }
 }
