@@ -35,6 +35,7 @@ int main(int argc, char** argv)
 
     double* bmag=new double[LL];
     double* twist=new double[LL];
+    double* FreeEnergy=new double[LL];
 
     double* tx=new double[LL];
     double* ty=new double[LL];
@@ -59,7 +60,7 @@ int main(int argc, char** argv)
     setupmask(mask);
     cout << "starting simulation" << endl;
 
-#pragma omp parallel default(none) shared(nx,ny,nz, hx,hy,hz,px,py,pz,hpx,hpy,hpz, bx,by,bz,bmag, tx,ty,tz,twist, n,mask,cout)
+#pragma omp parallel default(none) shared(nx,ny,nz, hx,hy,hz,px,py,pz,hpx,hpy,hpz, bx,by,bz,bmag, tx,ty,tz,twist, FreeEnergy, n,mask,cout)
     {
         while(n<=Nmax)
         {
@@ -73,13 +74,13 @@ int main(int argc, char** argv)
                 if (n%vtkstepskip==0)
                 {
                     cout << "writing VTK files at timestep " << n << endl;
-                    computeBendTwistAndCurlofCirculation(n,nx,ny,nz,bx,by,bz,bmag,twist,tx,ty,tz);
-                    writeVTKfiles(n,nx,ny,nz,px,py,pz,bx,by,bz,tx,ty,tz,twist);       // output VTK files for use with ParaView
+                    computeBendTwistEnergyOrientation(n,nx,ny,nz,bx,by,bz,px,py,pz,bmag,twist,FreeEnergy,tx,ty,tz);
+                    writeVTKfiles(n,nx,ny,nz,px,py,pz,bx,by,bz,tx,ty,tz,twist,FreeEnergy);       // output VTK files for use with ParaView
                 }
                 if ((n>=curvestarttime) &&(n%curvestepskip==0))
                 {
                     cout << "writing the bend zeros at timestep " << n << endl;
-                    computeBendTwistAndCurlofCirculation(n,nx,ny,nz,bx,by,bz,bmag,twist, tx,ty,tz);
+                    computeBendTwistEnergyOrientation(n,nx,ny,nz,bx,by,bz,px,py,pz,bmag,twist,FreeEnergy,tx,ty,tz);
                     Link Curve;
                     Link PushOffCurve;
                     FindBendZeros(Curve,PushOffCurve,bx,by,bz, bmag,tx,ty,tz,mask);
@@ -154,9 +155,9 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
 
                 // define texture to simulate -- 0 or 1
                 HELICONICAL = 0; // standard heliconical texture
-                HOPF = 0; // Hopf texture
+                HOPF = 1; // Hopf texture
                 HOPF2 = 0; // Hopf texture
-                SQUARE = 1;
+                SQUARE = 0;
 
                 // initial configuration
                 k=l=m=0;
@@ -196,8 +197,8 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                 {
                     int xup,xdwn,yup,ydwn,zup,zdwn;
                     double rho,theta,phi, rr, norm;    // variables for hopf texture
-                    double RR = 0.45*Lz;  // scale
-                    double RR2 =0.25*Lz;  // scale
+                    double RR = 0.2*Lz;  // scale
+                    double RR2 =0.1*Lz;  // scale
                     for (j=0; j<LL; j++)
                     {
                         // heliconical
@@ -519,7 +520,7 @@ void update(double* nx, double* ny,double* nz,double* px, double* py,double* pz,
 
 } // end update
 
-void computeBendTwistAndCurlofCirculation(const int n, const double* nx,const double* ny,const double* nz, double* bx, double* by, double* bz, double* bmag, double* twist,  double* tx, double* ty, double* tz)
+void computeBendTwistEnergyOrientation(const int n, const double* nx,const double* ny,const double* nz, double* bx, double* by, double* bz,const double* px, const double* py, const double* pz, double* bmag, double* twist,double* FreeEnergy, double* tx, double* ty, double* tz)
 {
 
     int j;
@@ -531,6 +532,7 @@ void computeBendTwistAndCurlofCirculation(const int n, const double* nx,const do
     int k,l,m;
     int xup,xdwn,yup,ydwn,zup,zdwn;
     double Dxnx,Dxny,Dxnz,Dynx,Dyny,Dynz,Dznx,Dzny,Dznz;
+    double Dxpx,Dypx,Dzpx,Dxpy,Dypy,Dzpy, Dxpz,Dypz,Dzpz;
     double Dxbx,Dxby,Dxbz,Dybx,Dyby,Dybz,Dzbx,Dzby,Dzbz;
     double Dxcy,Dxcz,Dycx,Dycz,Dzcx,Dzcy;
 
@@ -569,16 +571,37 @@ void computeBendTwistAndCurlofCirculation(const int n, const double* nx,const do
         Dynz = (nz[yup]-nz[ydwn])/2.0;
         Dznz = (nz[zup]-nz[zdwn])/2.0;
 
+        Dxpx = (px[xup]-px[xdwn])/2.0;
+        Dypx = (px[yup]-px[ydwn])/2.0;
+        Dzpx = (px[zup]-px[zdwn])/2.0;
+
+        Dxpy = (py[xup]-py[xdwn])/2.0;
+        Dypy = (py[yup]-py[ydwn])/2.0;
+        Dzpy = (py[zup]-py[zdwn])/2.0;
+
+        Dxpz = (pz[xup]-pz[xdwn])/2.0;
+        Dypz = (pz[yup]-pz[ydwn])/2.0;
+        Dzpz = (pz[zup]-pz[zdwn])/2.0;
+
+
 #if BC // one-sided derivates at boundaries
         if (m==0) {
             Dznx = (-3.0*nx[j]+4.0*nx[zup]-nx[zdwn])/2.0;
             Dzny = (-3.0*ny[j]+4.0*ny[zup]-ny[zdwn])/2.0;
             Dznz = (-3.0*nz[j]+4.0*nz[zup]-nz[zdwn])/2.0;
+
+            Dzpx = (-3.0*px[j]+4.0*px[zup]-px[zdwn])/2.0;
+            Dzpy = (-3.0*py[j]+4.0*py[zup]-py[zdwn])/2.0;
+            Dzpz = (-3.0*pz[j]+4.0*pz[zup]-pz[zdwn])/2.0;
         }
         if (m==Lz-1) {
             Dznx = (3.0*nx[j]-4.0*nx[zdwn]+nx[zup])/2.0;
             Dzny = (3.0*ny[j]-4.0*ny[zdwn]+ny[zup])/2.0;
             Dznz = (3.0*nz[j]-4.0*nz[zdwn]+nz[zup])/2.0;
+
+            Dzpx = (3.0*px[j]-4.0*px[zdwn]+px[zup])/2.0;
+            Dzpy = (3.0*py[j]-4.0*py[zdwn]+py[zup])/2.0;
+            Dzpz = (3.0*pz[j]-4.0*pz[zdwn]+pz[zup])/2.0;
         }
 #endif
 
@@ -590,6 +613,14 @@ void computeBendTwistAndCurlofCirculation(const int n, const double* nx,const do
 
         // calculate twist
         twist[j] = nx[j]*(Dynz-Dzny) + ny[j]*(Dznx-Dxnz) + nz[j]*(Dxny-Dynx);
+
+        // calculate free energy
+        double gradnsquared =(Dxnx*Dxnx + Dxny*Dxny+ Dxnz*Dxnz) + (Dynx*Dynx + Dyny*Dyny+ Dynz*Dynz)+ (Dznx*Dznx + Dzny*Dzny+ Dznz*Dznz);
+        double gradpsquared=(Dxpx*Dxpx + Dxpy*Dxpy+ Dxpz*Dxpz) +( Dypx*Dypx + Dypy*Dypy+ Dypz*Dypz) +( Dzpx*Dzpx + Dzpy*Dzpy+ Dzpz*Dzpz);
+        double bdotp = bx[j]*px[j] + by[j]*py[j] + bz[j]*pz[j];
+        double pdotp = px[j]*px[j] + py[j]*py[j] + pz[j]*pz[j];
+           
+        FreeEnergy[j] = (K/2)*(gradnsquared) - lambda*(bdotp) + (C/2)*(gradpsquared) + (U/4)*(1-pdotp)*(1-pdotp);
 
         // keep track of boundaries
         k++;
