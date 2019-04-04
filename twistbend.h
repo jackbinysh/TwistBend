@@ -47,10 +47,12 @@ const double C = K*pow(sin(thetah),4)/cos(2.0*thetah);
 const double U = C/9.0; // say
 
 // do we want to read in a file? If so, whats its name?
-enum InitialisationType {FROM_FUNCTION,FROM_FILE};
+enum InitialisationType {FROM_FUNCTION,FROM_FILE, FROM_SOLIDANGLE};
 const InitialisationType InitialisationMethod = FROM_FUNCTION;
 const string director_filename="vtk_director_100000.vtk";
 const string polarisation_filename="vtk_polarisation_100000.vtk";
+// the input filename, in the form "xxxxx.txt"
+extern std::string knot_filename;
 const int starttime=0;
 const char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 
@@ -94,6 +96,11 @@ struct knotpoint
     double e2y;   //position vector x coord
     double e2z;   //position vector x coord
 
+    // curvatures
+    double kappaNx;
+    double kappaNy;
+    double kappaNz;
+
     double length;
 
 };
@@ -108,7 +115,19 @@ struct knotcurve
 struct Link
 {
     std::vector<knotcurve> Components;
-}; 
+    int NumComponents;
+    int NumPoints;
+    // bounding box
+    double minx, maxx;
+    double miny, maxy;
+    double minz, maxz;
+};
+struct viewpoint
+{
+    double xcoord;
+    double ycoord;
+    double zcoord;
+};
 
 /* functions */
 void startconfig(int& n ,double* nx, double* ny,double* nz,double* px, double* py,double* pz);
@@ -119,6 +138,9 @@ double my_minimisation_function(const gsl_vector* minimum, void* params);
 int pt(const int k,const  int l,const  int m);       //convert i,j,k to single index
 int incp(int i, int p, int N);    //increment i with p for periodic boundary
 int mod(int i, int N);   //my own mod fn
+double x(int i);
+double y(int j);
+double z(int k);
 void CurveSmoothing(Link& Curve, int filterlength);
 bool KnotpointInMask(const knotpoint knotpoint, const bool* mask);
 void setupmask(bool* mask);

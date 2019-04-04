@@ -4,7 +4,9 @@
 /**************************************************************/
 
 #include "twistbend.h"
-#include "SolidAngleLink.h"
+#include "SolidAngle/SolidAngle.h"
+#include "SolidAngle/InputOutput.h"
+#include "SolidAngle/Geometry.h"
 #include "ReadingWriting.h"
 #include <iostream>
 #include <fstream>
@@ -387,6 +389,108 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                 n = starttime;
                 break;
             }
+            case FROM_SOLIDANGLE:
+            {
+                InitialiseSystemParameters();
+                int j,k,l,m;
+                double omega,alpha,R,rho;
+                // for initialising the polarisation
+                int xup,xdwn,yup,ydwn,zup,zdwn;
+                double norm;
+                // value of the Hopf invariant
+                int h;
+                h = 2;
+                // initialise the knot
+                Link Curve;
+                if(0==InitialiseFromFile(Curve))
+                {
+                    cout << "Filling in the Geometry of the Input Curve \n";
+                    ComputeGeometry(Curve);
+                    OutputScaledKnot(Curve); 
+                }
+                // initial configuration
+                k=l=m=0;
+                // radius for the tubular neighbourhood of the curve
+                R = 0.28*Lz;  
+
+                viewpoint Point;
+                omega=0.0; alpha=0.0; // overly cautious!!
+
+                // compute omega and the initial director field
+                for (j=0; j<LL; j++) {    
+                    // the far field director is the standard heliconical texture -- right handed
+                    nx[j] = sin(thetah)*cos(qh*m);
+                    ny[j] = sin(thetah)*sin(qh*m);
+                    nz[j] = cos(thetah);
+                    // polarisation
+                    px[j] = -sin(qh*m);
+                    py[j] = cos(qh*m);
+                    pz[j] = 0.0;
+                    // left handed
+                    //      nx[j] *= -1.0;
+                    //      px[j] *= -1.0;
+
+                    Point.xcoord = x(k); //1.0*k-Lx/2.0+0.5;
+                    Point.ycoord = y(l); //1.0*l-Ly/2.0+0.5;
+                    Point.zcoord = z(m); //1.0*m-Lz/2.0+0.5;
+
+                    // we need to calculate the distance to the curve 
+                    rho = ComputeDistanceOnePoint(Curve,Point);
+
+                    // put a Skyrmion texture inside the tubular neighbourhood
+                    if (rho < R) {
+                        // here is the solid angle
+                        omega = ComputeSolidAngleOnePoint(Curve,Point);
+                        // simple thing -- not adapted to distinct components yet!!
+                        alpha = ComputeLongitudinalPhase(Curve,Point);
+
+                        // set the director -- fix me! 
+                        // still need to be able to add Dehn twists to each component separately
+                        nx[j] = sin(M_PI*rho/R)*cos(0.5*omega-h*alpha);
+                        ny[j] = sin(M_PI*rho/R)*sin(0.5*omega-h*alpha);
+                        nz[j] = -cos(M_PI*rho/R);
+                    }
+
+                    k++;
+                    if (k==Lx) {l++; k=0;}
+                    if (l==Ly) {m++; l=0;}
+                }
+                // set the polarisation to the bend of the director 
+                k=l=m=0;
+                for (j=0; j<LL; j++) {
+                    Point.xcoord = x(k); //1.0*k-Lx/2.0+0.5;
+                    Point.ycoord = y(l); //1.0*l-Ly/2.0+0.5;
+                    Point.zcoord = z(m); //1.0*m-Lz/2.0+0.5;
+
+                    // we need to calculate the distance to the curve 
+                    rho = ComputeDistanceOnePoint(Curve,Point);
+
+                    if (rho < R) {
+                        // define neighbouring nodes
+                        xup=j+1; xdwn=j-1; yup=j+Lx; ydwn=j-Lx; zup=j+Lx*Ly; zdwn=j-Lx*Ly;
+                        // correct for periodic boundaries
+                        if (k==0) {xdwn+=Lx;}
+                        if (k==Lx-1) {xup-=Lx;}
+                        if (l==0) {ydwn+=Lx*Ly;}
+                        if (l==Ly-1) {yup-=Lx*Ly;}
+                        if (m==0) {zdwn+=LL;}
+                        if (m==Lz-1) {zup-=LL;}
+
+                        px[j] = nx[j]*(nx[xup]-nx[xdwn])+ny[j]*(nx[yup]-nx[ydwn])+nz[j]*(nx[zup]-nx[zdwn]);
+                        py[j] = nx[j]*(ny[xup]-ny[xdwn])+ny[j]*(ny[yup]-ny[ydwn])+nz[j]*(ny[zup]-ny[zdwn]);
+                        pz[j] = nx[j]*(nz[xup]-nz[xdwn])+ny[j]*(nz[yup]-nz[ydwn])+nz[j]*(nz[zup]-nz[zdwn]);
+                        // normalise
+                        norm = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
+                        norm += 0.000001; // perhaps overly cautious!!
+                        px[j] /= norm; py[j] /= norm; pz[j] /= norm; 
+                    }
+                    // deal with the periodic boundaries            
+                    k++;
+                    if (k==Lx) {l++; k=0;}
+                    if (l==Ly) {m++; l=0;}
+                }
+
+            }
     }
 }
 
@@ -619,7 +723,7 @@ void computeBendTwistEnergyOrientation(const int n, const double* nx,const doubl
         double gradpsquared=(Dxpx*Dxpx + Dxpy*Dxpy+ Dxpz*Dxpz) +( Dypx*Dypx + Dypy*Dypy+ Dypz*Dypz) +( Dzpx*Dzpx + Dzpy*Dzpy+ Dzpz*Dzpz);
         double bdotp = bx[j]*px[j] + by[j]*py[j] + bz[j]*pz[j];
         double pdotp = px[j]*px[j] + py[j]*py[j] + pz[j]*pz[j];
-           
+
         FreeEnergy[j] = (K/2)*(gradnsquared) - lambda*(bdotp) + (C/2)*(gradpsquared) + (U/4)*(1-pdotp)*(1-pdotp);
 
         // keep track of boundaries
@@ -1109,16 +1213,16 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
 
     //get the solid angle framings of each individual curve component. These have zero linking number with the components itself.
     // Note: this isnt the same as the solid angle framing for the whole link. in that case, that framing has SL(k_i) = -sum Lk(k_i,k_j). Im treating each component individually, ignoring the others.
-    double* phi=new double[LL];
+    double* phi = new double[LL];
     for(int c=0; c<Curve.Components.size(); c++)
     {
         Link tempCurve;
         tempCurve.Components.push_back(Curve.Components[c]);
-        ComputeSolidAngle(phi,tempCurve);
-        ComputeSolidAngleFraming(phi,tempCurve);
+        ComputeSolidAngleAllPoints(tempCurve, phi);
+        ComputeSolidAngleFraming(tempCurve,phi);
         Curve.Components[c]=tempCurve.Components[0];
     }
-    delete phi; 
+    delete phi;
 
     // okay, we have the solid angle framing for the curve. Now do 2 push offs
     //  interpolation of the b vector
@@ -1184,7 +1288,7 @@ void CurveSmoothing(Link& Curve, int filterlength)
                 paddedcoord[i] =  0;
                 smoothedpaddedcoord[i] = 0;
             }
-        
+
             switch(k)
             {
                 case 1 :
@@ -1194,7 +1298,7 @@ void CurveSmoothing(Link& Curve, int filterlength)
                 case 3 :
                     {for(int i=0; i<NP; i++) {paddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].zcoord ;} break;}
             }
-            
+
             // im going to pad the ends of the array, not with zeros, but with the end values repeated
             for(int i=0;i<startindex;i++){paddedcoord[i]=paddedcoord[startindex];}
             for(int i=endindex;i<paddedcoord.size();i++){paddedcoord[i]=paddedcoord[endindex];}
@@ -1213,11 +1317,11 @@ void CurveSmoothing(Link& Curve, int filterlength)
                 case 1 :
                     {for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].xcoord = smoothedpaddedcoord[i] ;} break;}
                 case 2 :
-                {for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].ycoord = smoothedpaddedcoord[i] ;} break;}
+                    {for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].ycoord = smoothedpaddedcoord[i] ;} break;}
                 case 3 :
-                   { for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].zcoord = smoothedpaddedcoord[i] ;} break;}
+                    { for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].zcoord = smoothedpaddedcoord[i] ;} break;}
             }
-        
+
         }
     }
 }
@@ -1273,9 +1377,9 @@ bool KnotpointInMask(const knotpoint knotpoint, const bool* mask)
         for(int jinc=0;jinc<=1;jinc++)
         {
             for(int kinc=0;kinc<=1;kinc++)
-                { 
-                   inmask = inmask && mask[pt(idwn+iinc,jdwn+jinc,kdwn+kinc)]; 
-                }
+            { 
+                inmask = inmask && mask[pt(idwn+iinc,jdwn+jinc,kdwn+kinc)]; 
+            }
         }
     }
     return inmask;
@@ -1302,6 +1406,20 @@ int circularmod(int i, int N)    // mod i by N in a ciruclar fashion, ie wrappin
 {
     if(i<0) return (N - ((-i)%N))%N;
     else return i%N;
+}
+double x(int i)
+{
+    return (i+0.5-Lx/2.0);
+}
+
+double y(int j)
+{
+    return (j+0.5-Ly/2.0);
+}
+
+double z(int k)
+{
+    return (k+0.5-Lz/2.0);
 }
 
 
