@@ -48,11 +48,11 @@ const double U = C/9.0; // say
 
 // do we want to read in a file? If so, whats its name?
 enum InitialisationType {FROM_FUNCTION,FROM_FILE, FROM_SOLIDANGLE};
-const InitialisationType InitialisationMethod = FROM_FUNCTION;
+const InitialisationType InitialisationMethod = FROM_SOLIDANGLE;
 const string director_filename="vtk_director_100000.vtk";
 const string polarisation_filename="vtk_polarisation_100000.vtk";
 // the input filename, in the form "xxxxx.txt"
-const std::string knot_filename="";
+const std::string knot_filename="Unknot";
 const int starttime=0;
 const char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 
