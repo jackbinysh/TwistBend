@@ -104,8 +104,6 @@ int InitialiseSystemParameters()
 
 int InitialiseFromFile(Link& Curve)
 {
-    Curve.NumPoints = 0;
-    Curve.NumComponents = NumComponents;
     Curve.Components.resize(NumComponents);
 
     double maxxin = 0;
@@ -115,14 +113,14 @@ int InitialiseFromFile(Link& Curve)
     double minyin = 0;
     double minzin = 0;
 
-    for(int i=0;i<Curve.NumComponents;i++)
+    for(int i=0;i<Curve.Components.size();i++)
     {
         stringstream ss;
         string buff,filename;
 
         ss.clear();
         ss.str("");
-        if (Curve.NumComponents==1)
+        if (Curve.Components.size()==1)
         {
             ss << "Knots/" << knot_filename << "/" << knot_filename << ".txt";
         }
@@ -163,8 +161,6 @@ int InitialiseFromFile(Link& Curve)
             }
 
             CurveInputStream.close();
-
-            Curve.NumPoints += Curve.Components[i].knotcurve.size();
         }
         else
         {
@@ -179,66 +175,6 @@ int InitialiseFromFile(Link& Curve)
     Curve.maxy=maxyin;
     Curve.minz=minzin;
     Curve.maxz=maxzin;
-    return 0;
-}
-
-int InitialiseFromFileNP(Link& CurveNP)
-{
-    CurveNP.NumPoints = 0;
-    CurveNP.NumComponents = 1;//NumComponents;
-    CurveNP.Components.resize(1);//(NumComponents);
-
-    for(int i=0;i<CurveNP.NumComponents;i++)
-    {
-        stringstream ss;
-        string buff,filename;
-
-        ss.clear();
-        ss.str("");
-        if (CurveNP.NumComponents==1)
-        {
-            ss << "Knots/" << knot_filename << "/" << knot_filename << "NP.txt";
-        }
-        else
-        {
-            ss << "Knots/" << knot_filename << "/" <<  knot_filename << "NP_" << i << ".txt";
-        }
-
-        filename = ss.str();
-        ifstream CurveInputStream;
-        CurveInputStream.open(filename.c_str());
-        if(CurveInputStream.is_open())
-        {
-            while(CurveInputStream.good())
-            {
-                double xcoord,ycoord,zcoord;
-                if(getline(CurveInputStream,buff))
-                {
-                    ss.clear();
-                    ss.str("");
-                    ss << buff;
-                    ss >> xcoord >> ycoord >> zcoord;
-                }
-                else break;
-
-                knotpoint Point;
-                Point.xcoord = xcoord;
-                Point.ycoord = ycoord;
-                Point.zcoord = zcoord;
-                CurveNP.Components[i].knotcurve.push_back(Point);
-            }
-
-            CurveInputStream.close();
-
-            CurveNP.NumPoints += CurveNP.Components[i].knotcurve.size();
-        }
-        else
-        {
-            std::cerr << "Could not find all input knot filenames in the folder with the given knot name. Aborting";
-            return 1;
-        }
-    }
-
     return 0;
 }
 
@@ -293,28 +229,3 @@ void OutputScaledKnot(Link& Curve)
     }
 
 }
-
-void OutputScaledKnotNP(Link& CurveNP)
-{
-  stringstream ss;
-  ss.str("");
-  ss.clear();
-  
-  ss << "Knots/" << knot_filename << "/" << "ParaViewBoundaryCurve_" << knot_filename << "NP.obj";
-  ofstream knotout (ss.str().c_str());
-  
-  int i;
-  int n = CurveNP.Components[0].knotcurve.size();
-  
-  for(i=0; i<n; i++)
-    {
-      knotout  <<"v " <<  CurveNP.Components[0].knotcurve[i].xcoord << ' ' << CurveNP.Components[0].knotcurve[i].ycoord << ' ' << CurveNP.Components[0].knotcurve[i].zcoord << '\n';
-    }
-  for(i=1; i<n; i++)
-    {
-      knotout << "l " << i << ' ' << incp(i,1,n+1) << '\n';
-    }
-  knotout << "l " << n  << ' ' << 1  << '\n';
-  knotout.close();
-}
-

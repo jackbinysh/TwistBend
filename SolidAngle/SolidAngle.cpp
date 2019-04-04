@@ -15,7 +15,7 @@
 double ComputeSolidAngleOnePoint(const Link& Curve, const viewpoint& View)
 {
     double totalomega = 0.0;
-    for(int i=0; i<Curve.NumComponents; i++)
+    for(int i=0; i<Curve.Components.size(); i++)
     {
         int NP = Curve.Components[i].knotcurve.size();
 
@@ -262,7 +262,7 @@ void ComputeSolidAngleFraming(Link&  Curve, double* phi)
 double ComputeDistanceOnePoint(const Link& Curve, const viewpoint& View)
 {
     double mindist = 10000.0;
-    for(int i=0; i<Curve.NumComponents; i++)
+    for(int i=0; i<Curve.Components.size(); i++)
     {
         int NP = Curve.Components[i].knotcurve.size();
         for (int s=0; s<NP; s++)
@@ -284,7 +284,7 @@ double ComputeLongitudinalPhase(const Link& Curve, const viewpoint& View)
 {
     double phase = 0.0;
     double mindist = 10000.0;
-    for(int i=0; i<Curve.NumComponents; i++)
+    for(int i=0; i<Curve.Components.size(); i++)
     {
         int NP = Curve.Components[i].knotcurve.size();
         for (int s=0; s<NP; s++)

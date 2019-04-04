@@ -21,27 +21,9 @@ void ComputeGeometry(Link& Curve)
     }
 }
 
-void ComputeGeometryNP(Link& Curve, Link& CurveNP)
-{
-  ScaleKnotNP(Curve,CurveNP); // the problem will be here !!
-  ComputeLengths(CurveNP);
-  ComputeTangent(CurveNP);
-  ComputeKappaN(CurveNP);
-  cout << "curve has size " << CurveNP.NumPoints << endl;
-  cout << "Number of refinements requested is " << NumRefinements << endl;
-  for(int counter=0;counter<NumRefinements;counter++)
-    {
-      RefineCurve(CurveNP);
-      ComputeLengths(CurveNP);
-      ComputeTangent(CurveNP);
-      ComputeKappaN(CurveNP);
-      cout << "curve has size " << CurveNP.NumPoints << endl;
-    }
-}
-
 void ComputeLengths(Link& Curve)
 {
-    for(int i=0; i<Curve.NumComponents; i++)
+    for(int i=0; i<Curve.Components.size(); i++)
     {
         int NP = Curve.Components[i].knotcurve.size();
         for(int s=0; s<NP; s++)
@@ -57,7 +39,7 @@ void ComputeLengths(Link& Curve)
 
 void ComputeTangent(Link& Curve)
 {
-    for(int i=0; i<Curve.NumComponents; i++)
+    for(int i=0; i<Curve.Components.size(); i++)
     {
         int NP = Curve.Components[i].knotcurve.size();
         for(int s=0; s<NP; s++)
@@ -73,7 +55,7 @@ void ComputeTangent(Link& Curve)
 
 void ComputeKappaN(Link& Curve)
 {
-    for(int i=0; i<Curve.NumComponents; i++)
+    for(int i=0; i<Curve.Components.size(); i++)
     {
         int NP = Curve.Components[i].knotcurve.size();
         for(int s=0; s<NP; s++)
@@ -94,7 +76,6 @@ void RefineCurve(Link& Curve)
 {
     Link NewCurve;
     NewCurve.NumPoints= 0;
-    NewCurve.NumComponents = NumComponents;
     NewCurve.Components.resize(NumComponents);
 
     // try this!!
@@ -105,7 +86,7 @@ void RefineCurve(Link& Curve)
     NewCurve.minz = Curve.minz;
     NewCurve.maxz = Curve.maxz; 
 
-    for (int i=0; i<Curve.NumComponents; i++)
+    for (int i=0; i<Curve.Components.size(); i++)
     {
         int NP = Curve.Components[i].knotcurve.size();
         for (int s=0; s<NP; s++)
@@ -150,7 +131,7 @@ void ScaleKnot(Link& Curve)
         midpoint[2] = 0.5*(maxzin+minzin);
         double scale[3];
         ScaleFunction(scale,maxxin,minxin,maxyin,minyin,maxzin,minzin);
-        for(int i=0; i<Curve.NumComponents; i++)
+        for(int i=0; i<Curve.Components.size(); i++)
         {
             for(int s=0; s<Curve.Components[i].knotcurve.size(); s++)
             {
@@ -199,7 +180,7 @@ void ScaleKnotNP(Link& Curve, Link& CurveNP)
       midpoint[2] = 0.5*(maxzin+minzin);
       double scale[3];
       ScaleFunction(scale,maxxin,minxin,maxyin,minyin,maxzin,minzin);
-      for(int i=0; i<CurveNP.NumComponents; i++)
+      for(int i=0; i<CurveNP.Components.size(); i++)
         {
 	  for(int s=0; s<CurveNP.Components[i].knotcurve.size(); s++)
             {

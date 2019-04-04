@@ -115,9 +115,8 @@ struct knotcurve
 struct Link
 {
     std::vector<knotcurve> Components;
-    int NumComponents;
-    int NumPoints;
     // bounding box
+    int NumPoints;
     double minx, maxx;
     double miny, maxy;
     double minz, maxz;

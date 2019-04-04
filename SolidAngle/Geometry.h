@@ -16,10 +16,8 @@ struct Link;
 
 // Runs scaling and refinement functions if the user has asked for them, then runs all geometric funtions to fill in the links geometry.
 void ComputeGeometry(Link& Curve);
-void ComputeGeometryNP(Link& Curve, Link& CurveNP);
 // ScaleKnot centers and scales the link to the box size if the user has requested it. ScaleFunction is a helper function for this purpose.
 void ScaleKnot(Link& Curve);
-void ScaleKnotNP(Link& Curve, Link& CurveNP);
 void ScaleFunction(double *scale, double maxxin, double minxin, double maxyin, double minyin, double maxzin, double minzin);
 // Subdivides each component of the link a user-defined number of times, placing a new point between each two exising points, with simple linear interpolation
 void RefineCurve(struct Link& Curve);
