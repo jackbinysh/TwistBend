@@ -52,7 +52,7 @@ const InitialisationType InitialisationMethod = FROM_FUNCTION;
 const string director_filename="vtk_director_100000.vtk";
 const string polarisation_filename="vtk_polarisation_100000.vtk";
 // the input filename, in the form "xxxxx.txt"
-extern std::string knot_filename;
+const std::string knot_filename="";
 const int starttime=0;
 const char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 
