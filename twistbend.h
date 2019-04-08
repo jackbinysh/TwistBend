@@ -24,13 +24,13 @@ using namespace std;
 
 // ============================================================
 
-const int Nmax = 50000;       // Number of timesteps
-const int vtkstepskip = 1000;   // print pitch and bend every stepskip timesteps
-const int curvestepskip = 1000;   // print pitch and bend every stepskip timesteps
-const int curvestarttime = 2000;   // print pitch and bend every stepskip timesteps
-const int Lx = 130;          // System size
-const int Ly = 130;          // System size
-const int Lz = 130;          // System size
+const int Nmax = 80000;       // Number of timesteps
+const int vtkstepskip = 5000;   // print pitch and bend every stepskip timesteps
+const int curvestepskip = 5000;   // print pitch and bend every stepskip timesteps
+const int curvestarttime = 5000;   // print pitch and bend every stepskip timesteps
+const int Lx = 150;          // System size
+const int Ly = 150;          // System size
+const int Lz = 80;          // System size
 
 #define BC 1 // periodic (0) or fixed (1) boundary conditions -- currently only fixed along z
 
@@ -39,7 +39,7 @@ const int    LL=Lx*Ly*Lz;     // total system size
 const double    K = 0.04;       // elastic constant
 const double dt = 0.65;        // integration timestep
 const double thetah = M_PI/11.0;  // heliconical angle
-const double qh = 1.1*(2.0*M_PI/Lz);  // heliconical pitch
+const double qh = 0.5*(2.0*M_PI/Lz);  // heliconical pitch
 // lambda = (Kq/2) tan(2thetah)
 const double lambda = 0.5*K*qh*tan(2.0*thetah);
 // C = K sin^4(thetah)/cos(2thetah)
@@ -48,12 +48,11 @@ const double U = C/9.0; // say
 
 // do we want to read in a file? If so, whats its name?
 enum InitialisationType {FROM_FUNCTION,FROM_FILE, FROM_SOLIDANGLE};
-const InitialisationType InitialisationMethod = FROM_SOLIDANGLE;
-const string director_filename="vtk_director_100000.vtk";
-const string polarisation_filename="vtk_polarisation_100000.vtk";
+const InitialisationType InitialisationMethod = FROM_FUNCTION;
+const string director_filename="vtk_data_50000.vtk";
 // the input filename, in the form "xxxxx.txt"
 const std::string knot_filename="Unknot";
-const int starttime=0;
+const int starttime=50000;
 const char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 
 // ============================================================

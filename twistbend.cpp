@@ -78,6 +78,7 @@ int main(int argc, char** argv)
                     cout << "writing VTK files at timestep " << n << endl;
                     computeBendTwistEnergyOrientation(n,nx,ny,nz,bx,by,bz,px,py,pz,bmag,twist,FreeEnergy,tx,ty,tz);
                     writeVTKfiles(n,nx,ny,nz,px,py,pz,bx,by,bz,tx,ty,tz,twist,FreeEnergy);       // output VTK files for use with ParaView
+                   // writeCustomPoints(n,nx,ny,nz,bx,by,bz);       // output VTK files for use with ParaView
                 }
                 if ((n>=curvestarttime) &&(n%curvestepskip==0))
                 {
@@ -199,8 +200,8 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
         {
             int xup,xdwn,yup,ydwn,zup,zdwn;
             double rho,theta,phi, rr, norm;    // variables for hopf texture
-            double RR = 0.2*Lz;  // scale
-            double RR2 =0.1*Lz;  // scale
+            double RR = 0.5*Lz;  // scale
+            double RR2 =0.2*Lz;  // scale
             for (j=0; j<LL; j++)
             {
                 // heliconical
@@ -864,7 +865,7 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
      *
      */
     // threshold for detecting another bend zero
-    const double threshold =0.05;
+    const double threshold =0.01;
     // The size of the hemisphere in front of the current point which the code searches for the next point to go to. The data is on a grid of size 1, so it makes no sense for this to be way below 1. some O(1) number here is good.
     const double sphereradius =1.2;
     // How many steps on the hemisphere the GSL minimizer should make. Ive found setting this too high makes the code more jagged. I don't reaaaaallly know why, perhaps being really picky about where the minimum is in "noisy" data causes it to run off.

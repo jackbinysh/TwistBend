@@ -33,6 +33,15 @@ int file_read_ASCII( double *nx,double *ny, double *nz, double *px, double *py,d
             return 1;
         }
     }
+    // skip until we get to the director data
+    cout << " reading director\n";
+    size_t found = 0;
+    do
+    {
+        if(getline(fin,buff)) temp = buff;
+        found =temp.find("VECTORS n double");
+    }
+    while(found==-1);
 
     for(k=0; k<Lz; k++)
     {
@@ -53,30 +62,23 @@ int file_read_ASCII( double *nx,double *ny, double *nz, double *px, double *py,d
                 }
                 else
                 {
-                    cout << "Something went wrong!\n";
+                    cout << "Something went wrong in the director read!\n";
                     return 1;
                 }
             }
         }
     }
-    fin.close();
 
-    string temp2,buff2;
-    stringstream ss2;
-    ifstream fin2 (polarisation_filename.c_str());
-    for(i=0;i<9;i++)
+    // skip until we get to the polarization data
+    found = 0;
+    do
     {
-        if(fin2.good())
-        {
-            if(getline(fin2,buff2)) temp2 = buff2;
-        }
-        else
-        {
-            cout << "Something went wrong!\n";
-            return 1;
-        }
+        if(getline(fin,buff)) temp = buff;
+        found =temp.find("VECTORS p double");
     }
+    while(found==-1);
 
+    cout << " reading polarization\n";
     for(k=0; k<Lz; k++)
     {
         for(j=0; j<Ly; j++)
@@ -84,28 +86,27 @@ int file_read_ASCII( double *nx,double *ny, double *nz, double *px, double *py,d
             for(i=0; i<Lx; i++)
             {
                 n=pt(i,j,k);
-                ss2.clear();
-                ss2.str("");
-                if(fin2.good())
+                ss.clear();
+                ss.str("");
+                if(fin.good())
                 {
-                    if(getline(fin2,buff2))
+                    if(getline(fin,buff))
                     {
-                        ss2 << buff2;
-                        ss2 >> px[n] >> py[n] >>pz[n] ;
+                        ss << buff;
+                        ss >> px[n] >> py[n] >>pz[n] ;
                     }
                 }
                 else
                 {
-                    cout << "Something went wrong!\n";
+                    cout << "Something went wrong in the polarization read!\n";
                     return 1;
                 }
             }
         }
     }
-    fin2.close();
+    fin.close();
     return 0;
 }
-
 int file_read(double *nx,double *ny, double *nz, double *px, double *py,double* pz)
 {
     file_read_ASCII(nx,ny,nz,px,py,pz);
@@ -236,3 +237,98 @@ void print_Curve( double t, Link& Curve, string Name)
     }
 }
 
+
+void writeCustomPoints(double t,double *nx,double *ny, double *nz,double *bx,double *by,double *bz)
+{
+
+    //offsets
+    double k0 = Lx/2.0 - 0.5;
+    double l0 = Ly/2.0 - 0.5;
+    double m0 = Lz/2.0 - 0.5; // offset from the lattice points
+
+    // generate the set of points we wish to plot at
+    std::vector<double> plotx;
+    std::vector<double> ploty;
+
+    // an inner annulus 
+    double maxr = Lx/5;
+    double minr = Lx/30;
+    // and how dense?
+    int numtheta=20;
+    int numr=3;
+    for(int r=0; r<numr; r++)
+    {
+        for(int theta=0; theta<numtheta; theta++)
+        {
+
+            double x = (minr + r*((maxr-minr)/numr))*cos(theta*((2*M_PI)/numtheta))+k0; 
+            double y = (minr + r*((maxr-minr)/numr))*sin(theta*((2*M_PI)/numtheta))+l0;
+            plotx.push_back(x);
+            ploty.push_back(y);
+        }
+    }
+
+    // an outer annulus 
+    maxr = Lx/2.9;
+    minr = Lx/4;
+    // and how dense?
+    numtheta=50;
+    numr=5;
+    for(int r=0; r<numr; r++)
+    {
+        for(int theta=0; theta<numtheta; theta++)
+        {
+
+            double x = (minr + r*((maxr-minr)/numr))*cos(theta*((2*M_PI)/numtheta))+k0; 
+            double y = (minr + r*((maxr-minr)/numr))*sin(theta*((2*M_PI)/numtheta))+l0;
+            plotx.push_back(x);
+            ploty.push_back(y);
+        }
+    }
+    // do the writing
+    stringstream ss;
+    ss.str("");
+    ss.clear();
+    ss << "CustomPoints" << "_" << t <<  ".vtk";
+    ofstream knotout (ss.str().c_str());
+    knotout << "# vtk DataFile Version 3.0\nKnot\nASCII\nDATASET UNSTRUCTURED_GRID\n";
+    knotout << "POINTS " << plotx.size() << " float\n";
+    for(int j = 0;j<plotx.size();j++)
+    {
+        knotout << plotx[j] << ' ' << ploty[j]<< ' ' << m0 << '\n';
+    }
+
+    knotout << "\n\nPOINT_DATA " << plotx.size() << "\n\n";
+    knotout << "\nVECTORS n float\n";
+
+    likely::TriCubicInterpolator interpolatednx(nx, 1, Lx,Ly,Lz);
+    likely::TriCubicInterpolator interpolatedny(ny, 1, Lx,Ly,Lz);
+    likely::TriCubicInterpolator interpolatednz(nz, 1, Lx,Ly,Lz);
+
+    for(int j = 0;j<plotx.size();j++)
+    {
+
+            double x = plotx[j];
+            double y = ploty[j];
+            double inx = interpolatednx(x,y,m0);
+            double iny = interpolatedny(x,y,m0);
+            double inz = interpolatednz(x,y,m0);
+            knotout << inx << ' ' << iny << ' ' << inz << '\n';
+    }
+
+    likely::TriCubicInterpolator interpolatedbx(bx, 1, Lx,Ly,Lz);
+    likely::TriCubicInterpolator interpolatedby(by, 1, Lx,Ly,Lz);
+    likely::TriCubicInterpolator interpolatedbz(bz, 1, Lx,Ly,Lz);
+    knotout << "\nVECTORS b float\n";
+    for(int j = 0;j<plotx.size();j++)
+    {
+
+            double x = plotx[j];
+            double y = ploty[j];
+            double ibx = interpolatedbx(x,y,m0);
+            double iby = interpolatedby(x,y,m0);
+            double ibz = interpolatedbz(x,y,m0);
+            knotout << ibx << ' ' << iby << ' ' << ibz << '\n';
+    }
+    knotout.close();
+}
