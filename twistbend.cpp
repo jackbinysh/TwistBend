@@ -462,9 +462,9 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
         k=l=m=0;
         for (j=0; j<LL; j++)
         {
-            Point.xcoord = x(k); //1.0*k-Lx/2.0+0.5;
-            Point.ycoord = y(l); //1.0*l-Ly/2.0+0.5;
-            Point.zcoord = z(m); //1.0*m-Lz/2.0+0.5;
+            Point.xcoord = k; //1.0*k-Lx/2.0+0.5;
+            Point.ycoord = l; //1.0*l-Ly/2.0+0.5;
+            Point.zcoord = m; //1.0*m-Lz/2.0+0.5;
 
             // we need to calculate the distance to the curve
             rho = ComputeDistanceOnePoint(Curve,Point);
@@ -879,8 +879,8 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
     // specify a lengthscale to kill fluctuations shorter than, for the curve smoothing. Some O(1- 10) numer
     const double filterlength=3;
     // when we do the two push offs, need to specify how far to push. roughly O(1) numbers again.
-    double firstpushdist = 2;
-    double secondpushdist = 5;
+    double firstpushdist = 1;
+    double secondpushdist = 6;
     /*
      *
      *
@@ -1237,21 +1237,13 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
     {
         PushOffCurve.Components.push_back(Curve.Components[c]);
         int NP = Curve.Components[c].knotcurve.size();
-        // first pushoff onto the seifert surface
-        for(int s=0; s<NP; s++)
-        {
-            PushOffCurve.Components[c].knotcurve[s].xcoord =Curve.Components[c].knotcurve[s].xcoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegax;
-            PushOffCurve.Components[c].knotcurve[s].ycoord =Curve.Components[c].knotcurve[s].ycoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegay;
-            PushOffCurve.Components[c].knotcurve[s].zcoord =Curve.Components[c].knotcurve[s].zcoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegaz;
-        }
-
 
         // that was the first pushoff.For the second we push along the direction of b at this point
         for(int s=0; s<NP; s++)
         {
-            double xcoord = PushOffCurve.Components[c].knotcurve[s].xcoord;
-            double ycoord = PushOffCurve.Components[c].knotcurve[s].ycoord;
-            double zcoord = PushOffCurve.Components[c].knotcurve[s].zcoord;
+            double xcoord = Curve.Components[c].knotcurve[s].xcoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegax;
+            double ycoord = Curve.Components[c].knotcurve[s].ycoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegay;
+            double zcoord = Curve.Components[c].knotcurve[s].zcoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegaz;
             double tempbx = interpolatedbx(xcoord,ycoord,zcoord);
             double tempby = interpolatedby(xcoord,ycoord,zcoord);
             double tempbz = interpolatedbz(xcoord,ycoord,zcoord);
@@ -1262,9 +1254,9 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
             PushOffCurve.Components[c].knotcurve[s].bx =tempbx;
             PushOffCurve.Components[c].knotcurve[s].by =tempby;
             PushOffCurve.Components[c].knotcurve[s].bz =tempbz;
-            PushOffCurve.Components[c].knotcurve[s].xcoord =xcoord+secondpushdist*tempbx;
-            PushOffCurve.Components[c].knotcurve[s].ycoord =ycoord+secondpushdist*tempby;
-            PushOffCurve.Components[c].knotcurve[s].zcoord =zcoord+secondpushdist*tempbz;
+            PushOffCurve.Components[c].knotcurve[s].xcoord =Curve.Components[c].knotcurve[s].xcoord+secondpushdist*tempbx;
+            PushOffCurve.Components[c].knotcurve[s].ycoord =Curve.Components[c].knotcurve[s].ycoord+secondpushdist*tempby;
+            PushOffCurve.Components[c].knotcurve[s].zcoord =Curve.Components[c].knotcurve[s].zcoord+secondpushdist*tempbz;
         }
     }
 
@@ -1411,6 +1403,7 @@ int circularmod(int i, int N)    // mod i by N in a ciruclar fashion, ie wrappin
     if(i<0) return (N - ((-i)%N))%N;
     else return i%N;
 }
+
 double x(int i)
 {
     return (i+0.5-Lx/2.0);
@@ -1425,5 +1418,6 @@ double z(int k)
 {
     return (k+0.5-Lz/2.0);
 }
+
 
 

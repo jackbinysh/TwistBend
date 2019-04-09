@@ -6,7 +6,7 @@ int NumComponents;
 int NumRefinements;
 bool Scaling,ScaleProportionally;
 double BoxFractionx, BoxFractiony, BoxFractionz;
-double Threshold_ninf_dot_n;
+double Threshold_ninf_dot_n=-0.9;
 double Initialninftyx=0;
 double Initialninftyy=0;
 double Initialninftyz=1;

@@ -117,9 +117,9 @@ void ComputeSolidAngleAllPoints(const Link& Curve,double* omega)
             {
                 for (int i=0; i<Lx; i++)
                 {
-                    Point.xcoord = x(i);
-                    Point.ycoord = y(j) ;
-                    Point.zcoord = z(k);
+                    Point.xcoord = i;
+                    Point.ycoord = j ;
+                    Point.zcoord = k;
 
                     double SolidAngle = ComputeSolidAngleOnePoint(Curve,Point);
 
@@ -147,7 +147,6 @@ void ComputeSolidAngleAllPoints(const Link& Curve,double* omega)
 #endif
         }
     }
-
 }
 // find the difference between the framing we have given the curve, and the framing provided by the solid angle function.
 void ComputeSolidAngleFraming(Link&  Curve, double* phi)
