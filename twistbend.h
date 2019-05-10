@@ -149,5 +149,6 @@ double z(int k);
 void CurveSmoothing(Link& Curve, int filterlength);
 bool KnotpointInMask(const knotpoint knotpoint, const bool* mask);
 void setupmask(bool* mask);
+double LinkingNumber(vector<knotpoint>& Curve1, vector<knotpoint>& Curve2);
 
 #endif //twistbend_H

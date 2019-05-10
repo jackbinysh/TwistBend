@@ -1293,27 +1293,27 @@ void FindBendZeros(Link& Curve,double* nx,double* ny,double* nz, double* bx,doub
         }
     }
     // linking and self linking numbers
-    Link.LinkingMatrix = vector<vector<double>>(Curve.Components[i].knotcurve.size(),vector<double>(Curve.Components[i].knotcurve.size(),99));
-    for(int i=0; i<Curve.Components.size(); j++)
+    Curve.LinkingMatrix = vector<vector<double>>(Curve.Components.size(),vector<double>(Curve.Components.size(),99));
+    for(int i=0; i<Curve.Components.size(); i++)
     {
         // the self linking case 
         int NP = Curve.Components[i].knotcurve.size();
         vector<knotpoint> PushOff(NP);
-        double secondpustdist =2;
+        double secondpushdist =2;
         for(int s=0; s<NP; s++)
         {
             PushOff[s].xcoord =Curve.Components[i].knotcurve[s].xcoord+secondpushdist*Curve.Components[i].knotcurve[s].bx;
             PushOff[s].ycoord =Curve.Components[i].knotcurve[s].ycoord+secondpushdist*Curve.Components[i].knotcurve[s].by;
             PushOff[s].zcoord =Curve.Components[i].knotcurve[s].zcoord+secondpushdist*Curve.Components[i].knotcurve[s].bz;
         }
-        Link.LinkingMatrix[i][i]=LinkingNumber(Curve.Components[i],PushOff);
+        Curve.LinkingMatrix[i][i]=LinkingNumber(Curve.Components[i].knotcurve,PushOff);
         for(int j=0; j<Curve.Components.size(); j++)
         {
             // self linking
             if(i!=j)
             {
                 // linking
-               Link.LinkingMatrix[i][j]= LinkingNumber(Curve.Components[i],Curve.Components[j]);
+               Curve.LinkingMatrix[i][j]= LinkingNumber(Curve.Components[i].knotcurve,Curve.Components[j].knotcurve);
             }
         }
     }
@@ -1476,30 +1476,30 @@ double z(int k)
     return (k+0.5-Lz/2.0);
 }
 
-double LinkingNumber(vector<knotcurve>& Curve1, vector<knotcurve>& Curve2)
+double LinkingNumber(vector<knotpoint>& Curve1, vector<knotpoint>& Curve2)
 {
     double dLinkingNumber=0;
-    int NP1 = Curve1.knotcurve.size();
-    int NP2 = Curve2.knotcurve.size();
+    int NP1 = Curve1.size();
+    int NP2 = Curve2.size();
     for(int s1=0; s1<NP1; s1++)
     {
-        double xcoord1 = Curve1[s1].xcoord;
-        double ycoord1 = Curve1[s1].ycoord;
-        double zcoord1 = Curve1[s1].zcoord;
+        double x1 = Curve1[s1].xcoord;
+        double y1 = Curve1[s1].ycoord;
+        double z1 = Curve1[s1].zcoord;
         double dx1 = (Curve1[(s1+1)%NP1].xcoord - Curve1[s1].xcoord);
         double dy1 = (Curve1[(s1+1)%NP1].ycoord - Curve1[s1].ycoord);
         double dz1 = (Curve1[(s1+1)%NP1].zcoord - Curve1[s1].zcoord);
         for(int s2=0; s2<NP2; s2++)
         {
-            double xcoord2 = Curve2[s2].xcoord;
-            double ycoord2 = Curve2[s2].ycoord;
-            double zcoord2 = Curve2[s2].zcoord;
+            double x2 = Curve2[s2].xcoord;
+            double y2 = Curve2[s2].ycoord;
+            double z2 = Curve2[s2].zcoord;
             double dx2 = (Curve2[(s2+1)%NP2].xcoord - Curve2[s2].xcoord);
             double dy2 = (Curve2[(s2+1)%NP2].ycoord - Curve2[s2].ycoord);
             double dz2 = (Curve2[(s2+1)%NP2].zcoord - Curve2[s2].zcoord);
 
-            num = (x2-x1)*(dy1*dz2-dz1*dy2)+(y2-y1)*(dz1*dx2-dx1*dz2)+(z2-z1)*(dx1*dy2-dy1*dx2);
-            denom = std:pow( (x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)+(z2-z1)*(z2-z1) , 1.5);
+            double num = (x2-x1)*(dy1*dz2-dz1*dy2)+(y2-y1)*(dz1*dx2-dx1*dz2)+(z2-z1)*(dx1*dy2-dy1*dx2);
+            double denom = std::pow( (x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)+(z2-z1)*(z2-z1) , 1.5);
             dLinkingNumber += (num/denom);
         }
     }
