@@ -164,6 +164,7 @@ void writeVTKfiles(const int n, const double *nx,const double *ny,const double *
 
 void print_Curve( double t, Link& Curve, string Name)
 {
+
     for( int c=0; c < (Curve.Components.size()) ; c++)
     {
 
@@ -252,6 +253,22 @@ void print_Curve( double t, Link& Curve, string Name)
         }
 
         knotout.close();
+    }
+    // now print the linking matrix
+    stringstream ss;
+    ss.str("");
+    ss.clear();
+    ss << "LinkingMatrix.txt";
+    ofstream LinkingMatrixout (ss.str().c_str(),ios_base::app);
+    int n = Curve.Components.size();
+    for(int i=0; i<n; i++)
+    {
+        LinkingMatrixout <<t << "\n";
+        for(int j=0; j<n; j++)
+        {
+            LinkingMatrixout << Curve.LinkingMatrix[i][j]<< ',';
+        }
+        LinkingMatrixout <<"\n";
     }
 }
 
