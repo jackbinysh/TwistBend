@@ -78,7 +78,7 @@ int main(int argc, char** argv)
                     cout << "writing VTK files at timestep " << n << endl;
                     computeBendTwistEnergyOrientation(n,nx,ny,nz,bx,by,bz,px,py,pz,bmag,twist,FreeEnergy,tx,ty,tz);
                     writeVTKfiles(n,nx,ny,nz,px,py,pz,bx,by,bz,tx,ty,tz,twist,FreeEnergy);       // output VTK files for use with ParaView
-                   // writeCustomPoints(n,nx,ny,nz,bx,by,bz);       // output VTK files for use with ParaView
+                    // writeCustomPoints(n,nx,ny,nz,bx,by,bz);       // output VTK files for use with ParaView
                 }
                 if ((n>=curvestarttime) &&(n%curvestepskip==0))
                 {
@@ -147,354 +147,354 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
 {
     switch(InitialisationMethod)
     {
-    case FROM_FUNCTION:
-    {
-        // k,l,m  are x,y,z indices, j is 1-d loop index.
-        int j,k,l,m;
-        int HELICONICAL,HOPF,SQUARE,HOPF2;
-        double k0,l0,m0;
-
-        // define texture to simulate -- 0 or 1
-        HELICONICAL = 0; // standard heliconical texture
-        HOPF = 1; // Hopf texture
-        HOPF2 = 0; // Hopf texture
-        SQUARE = 0;
-
-        // initial configuration
-        k=l=m=0;
-        k0 = Lx/2.0 - 0.5; l0 = Ly/2.0 - 0.5; m0 = Lz/2.0 - 0.5; // offset from the lattice points
-
-        // standard heliconical texture
-        if (HELICONICAL == 1)
-        {
-            for (j=0; j<LL; j++)
+        case FROM_FUNCTION:
             {
-                // director field
-                nx[j] = sin(thetah)*cos(qh*m);
-                ny[j] = sin(thetah)*sin(qh*m);
-                nz[j] = cos(thetah);
-                // polarisation
-                px[j] = -sin(qh*m);
-                py[j] = cos(qh*m);
-                pz[j] = 0.0;
-                // perversion -- try this
-                //      if ((m>0.25*Lz)&&(m<0.75*Lz)) {
-                //if (m>0.5*Lz) {
-                //	ny[j] *= -1.0;
-                //py[j] *= -1.0;
-                // test
-                //	nx[j] *= -1.0;
-                //	nz[j] *= -1.0;
-                // }}
-                // deal with the periodic boundaries
-                k++;
-                if (k==Lx) {l++; k=0;}
-                if (l==Ly) {m++; l=0;}
-            }
-        }
-        // hopf texture
-        // THIS ISNT CORRECT YET
-        if (HOPF == 1)
-        {
-            int xup,xdwn,yup,ydwn,zup,zdwn;
-            double rho,theta,phi, rr, norm;    // variables for hopf texture
-            // the raidus of the central core
-            double RR = 0.3*Lx;  // scale
-            // how fat the hopfion should be
-            double RR2 =0.25*Lx;  // scale
-            for (j=0; j<LL; j++)
-            {
-                // heliconical
-                // director field
-                nx[j] = sin(thetah)*cos(qh*m);
-                ny[j] = sin(thetah)*sin(qh*m);
-                nz[j] = cos(thetah);
-                // polarisation
-                px[j] = -sin(qh*m);
-                py[j] = cos(qh*m);
-                pz[j] = 0.0;
-                // back to Hopf
-                rr = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
-                rho = sqrt((rr-RR)*(rr-RR)+(m-m0)*(m-m0));
-                if (rho < RR2)
+                // k,l,m  are x,y,z indices, j is 1-d loop index.
+                int j,k,l,m;
+                int HELICONICAL,HOPF,SQUARE,HOPF2;
+                double k0,l0,m0;
+
+                // define texture to simulate -- 0 or 1
+                HELICONICAL = 0; // standard heliconical texture
+                HOPF = 1; // Hopf texture
+                HOPF2 = 0; // Hopf texture
+                SQUARE = 0;
+
+                // initial configuration
+                k=l=m=0;
+                k0 = Lx/2.0 - 0.5; l0 = Ly/2.0 - 0.5; m0 = Lz/2.0 - 0.5; // offset from the lattice points
+
+                // standard heliconical texture
+                if (HELICONICAL == 1)
                 {
-                    theta = atan2(m-m0,rr-RR);
-                    if (theta < 0.0) {theta+=2.0*M_PI;} // put in the range [0,2pi)
-                    phi = atan2(l-l0,k-k0);
-                    if (phi < 0.0) {phi+=2.0*M_PI;} // put in the range [0,2pi)
-
-                    // cross-section looks like double twist and an escaped -1
-                    // for -theta these are ordered -1 inside and double twist outside; for +theta it is the other way around
-                    // Hopf invariant -1
-                    //nx[j] = -sin(M_PI*rho/RR2)*sin(phi-theta); // could also use -theta; they seem to be equivalent in energy
-                    //ny[j] = sin(M_PI*rho/RR2)*cos(phi-theta); // could also use -theta
-                    // Hopf invariant +1
-                    nx[j] = -sin(M_PI*rho/RR2)*sin(phi+theta); // could also use -theta; they seem to be equivalent in energy
-                    ny[j] = sin(M_PI*rho/RR2)*cos(phi+theta); // could also use -theta
-                    nz[j] = -cos(M_PI*rho/RR2);
-
-                    px[j] = 0;
-                    py[j] = 0;
-                    pz[j] = 0.0;
+                    for (j=0; j<LL; j++)
+                    {
+                        // director field
+                        nx[j] = sin(thetah)*cos(qh*m);
+                        ny[j] = sin(thetah)*sin(qh*m);
+                        nz[j] = cos(thetah);
+                        // polarisation
+                        px[j] = -sin(qh*m);
+                        py[j] = cos(qh*m);
+                        pz[j] = 0.0;
+                        // perversion -- try this
+                        //      if ((m>0.25*Lz)&&(m<0.75*Lz)) {
+                        //if (m>0.5*Lz) {
+                        //	ny[j] *= -1.0;
+                        //py[j] *= -1.0;
+                        // test
+                        //	nx[j] *= -1.0;
+                        //	nz[j] *= -1.0;
+                        // }}
+                        // deal with the periodic boundaries
+                        k++;
+                        if (k==Lx) {l++; k=0;}
+                        if (l==Ly) {m++; l=0;}
+                    }
                 }
+                // hopf texture
+                // THIS ISNT CORRECT YET
+                if (HOPF == 1)
+                {
+                    int xup,xdwn,yup,ydwn,zup,zdwn;
+                    double rho,theta,phi, rr, norm;    // variables for hopf texture
+                    // the raidus of the central core
+                    double RR = 0.2*Lx;  // scale
+                    // how fat the hopfion should be
+                    double RR2 =0.15*Lx;  // scale
+                    for (j=0; j<LL; j++)
+                    {
+                        // heliconical
+                        // director field
+                        nx[j] = sin(thetah)*cos(qh*m);
+                        ny[j] = sin(thetah)*sin(qh*m);
+                        nz[j] = cos(thetah);
+                        // polarisation
+                        px[j] = -sin(qh*m);
+                        py[j] = cos(qh*m);
+                        pz[j] = 0.0;
+                        // back to Hopf
+                        rr = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
+                        rho = sqrt((rr-RR)*(rr-RR)+(m-m0)*(m-m0));
+                        if (rho < RR2)
+                        {
+                            theta = atan2(m-m0,rr-RR);
+                            if (theta < 0.0) {theta+=2.0*M_PI;} // put in the range [0,2pi)
+                            phi = atan2(l-l0,k-k0);
+                            if (phi < 0.0) {phi+=2.0*M_PI;} // put in the range [0,2pi)
+
+                            // cross-section looks like double twist and an escaped -1
+                            // for -theta these are ordered -1 inside and double twist outside; for +theta it is the other way around
+                            // Hopf invariant -1
+                            //nx[j] = -sin(M_PI*rho/RR2)*sin(phi-theta); // could also use -theta; they seem to be equivalent in energy
+                            //ny[j] = sin(M_PI*rho/RR2)*cos(phi-theta); // could also use -theta
+                            // Hopf invariant +1
+                            nx[j] = -sin(M_PI*rho/RR2)*sin(phi+theta); // could also use -theta; they seem to be equivalent in energy
+                            ny[j] = sin(M_PI*rho/RR2)*cos(phi+theta); // could also use -theta
+                            nz[j] = -cos(M_PI*rho/RR2);
+
+                            px[j] = 0;
+                            py[j] = 0;
+                            pz[j] = 0.0;
+                        }
 
 #if BC // normal anchoring along z
-                if (m==0) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
-                if (m==Lz-1) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
+                        if (m==0) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
+                        if (m==Lz-1) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
 #endif
-                // deal with the periodic boundaries
-                k++;
-                if (k==Lx) {l++; k=0;}
-                if (l==Ly) {m++; l=0;}
-            }
-            // set the polarisation to the bend of the director
-            k=l=m=0;
-            for (j=0; j<LL; j++)
-            {
-                // hack here ??
-                rr = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
-                rho = sqrt((rr-RR)*(rr-RR)+(m-m0)*(m-m0));
-                // define neighbouring nodes
-                xup=j+1; xdwn=j-1; yup=j+Lx; ydwn=j-Lx; zup=j+Lx*Ly; zdwn=j-Lx*Ly;
-                // correct for periodic boundaries
-                if (k==0) {xdwn+=Lx;}
-                if (k==Lx-1) {xup-=Lx;}
-                if (l==0) {ydwn+=Lx*Ly;}
-                if (l==Ly-1) {yup-=Lx*Ly;}
-                if (m==0) {zdwn+=LL;}
-                if (m==Lz-1) {zup-=LL;}
-                if (rho < RR2) {
-                    px[j] = nx[j]*(nx[xup]-nx[xdwn])+ny[j]*(nx[yup]-nx[ydwn])+nz[j]*(nx[zup]-nx[zdwn]);
-                    py[j] = nx[j]*(ny[xup]-ny[xdwn])+ny[j]*(ny[yup]-ny[ydwn])+nz[j]*(ny[zup]-ny[zdwn]);
-                    pz[j] = nx[j]*(nz[xup]-nz[xdwn])+ny[j]*(nz[yup]-nz[ydwn])+nz[j]*(nz[zup]-nz[zdwn]);
-                    // normalise
-                    norm = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
-                    px[j] /= norm; py[j] /= norm; pz[j] /= norm;
-                }
-                // deal with the periodic boundaries
-                k++;
-                if (k==Lx) {l++; k=0;}
-                if (l==Ly) {m++; l=0;}
-            }
-        } // end hopf
+                        // deal with the periodic boundaries
+                        k++;
+                        if (k==Lx) {l++; k=0;}
+                        if (l==Ly) {m++; l=0;}
+                    }
+                    // set the polarisation to the bend of the director
+                    k=l=m=0;
+                    for (j=0; j<LL; j++)
+                    {
+                        // hack here ??
+                        rr = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
+                        rho = sqrt((rr-RR)*(rr-RR)+(m-m0)*(m-m0));
+                        // define neighbouring nodes
+                        xup=j+1; xdwn=j-1; yup=j+Lx; ydwn=j-Lx; zup=j+Lx*Ly; zdwn=j-Lx*Ly;
+                        // correct for periodic boundaries
+                        if (k==0) {xdwn+=Lx;}
+                        if (k==Lx-1) {xup-=Lx;}
+                        if (l==0) {ydwn+=Lx*Ly;}
+                        if (l==Ly-1) {yup-=Lx*Ly;}
+                        if (m==0) {zdwn+=LL;}
+                        if (m==Lz-1) {zup-=LL;}
+                        if (rho < RR2) {
+                            px[j] = nx[j]*(nx[xup]-nx[xdwn])+ny[j]*(nx[yup]-nx[ydwn])+nz[j]*(nx[zup]-nx[zdwn]);
+                            py[j] = nx[j]*(ny[xup]-ny[xdwn])+ny[j]*(ny[yup]-ny[ydwn])+nz[j]*(ny[zup]-ny[zdwn]);
+                            pz[j] = nx[j]*(nz[xup]-nz[xdwn])+ny[j]*(nz[yup]-nz[ydwn])+nz[j]*(nz[zup]-nz[zdwn]);
+                            // normalise
+                            norm = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
+                            px[j] /= norm; py[j] /= norm; pz[j] /= norm;
+                        }
+                        // deal with the periodic boundaries
+                        k++;
+                        if (k==Lx) {l++; k=0;}
+                        if (l==Ly) {m++; l=0;}
+                    }
+                } // end hopf
 
-        if (HOPF2 == 1)
-        {
-            for (j=0; j<LL; j++)
-            {
-                complex<double> z1 =(double)(2)*(complex<double>(k,0)+complex<double>(0,l))/(double)(k*k+l*l+m*m+1);
-                complex<double> z2= (  (double)(2.0*m)+complex<double>(0,k*k+l*l+m*m-1) )/(double)(k*k+l*l+m*m+1);
-                complex<double> nxplusiny = (double)(2)*z1*conj(z2);
-                nx[j] = real(nxplusiny);
-                ny[j] = imag(nxplusiny);
-                nz[j] = abs(z1)*abs(z1)-abs(z2)*abs(z2);
+                if (HOPF2 == 1)
+                {
+                    for (j=0; j<LL; j++)
+                    {
+                        complex<double> z1 =(double)(2)*(complex<double>(k,0)+complex<double>(0,l))/(double)(k*k+l*l+m*m+1);
+                        complex<double> z2= (  (double)(2.0*m)+complex<double>(0,k*k+l*l+m*m-1) )/(double)(k*k+l*l+m*m+1);
+                        complex<double> nxplusiny = (double)(2)*z1*conj(z2);
+                        nx[j] = real(nxplusiny);
+                        ny[j] = imag(nxplusiny);
+                        nz[j] = abs(z1)*abs(z1)-abs(z2)*abs(z2);
 #if BC // normal anchoring along z
-                if (m==0) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
-                if (m==Lz-1) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
+                        if (m==0) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
+                        if (m==Lz-1) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
 #endif
-                // deal with the periodic boundaries
-                k++;
-                if (k==Lx) {l++; k=0;}
-                if (l==Ly) {m++; l=0;}
-            }
-            // set the polarisation to the bend of the director
-            k=l=m=0;
-            int xup,xdwn,yup,ydwn,zup,zdwn,norm;
-            for (j=0; j<LL; j++)
-            {
-                // define neighbouring nodes
-                xup=j+1; xdwn=j-1; yup=j+Lx; ydwn=j-Lx; zup=j+Lx*Ly; zdwn=j-Lx*Ly;
-                // correct for periodic boundaries
-                if (k==0) {xdwn+=Lx;}
-                if (k==Lx-1) {xup-=Lx;}
-                if (l==0) {ydwn+=Lx*Ly;}
-                if (l==Ly-1) {yup-=Lx*Ly;}
-                if (m==0) {zdwn+=LL;}
-                if (m==Lz-1) {zup-=LL;}
+                        // deal with the periodic boundaries
+                        k++;
+                        if (k==Lx) {l++; k=0;}
+                        if (l==Ly) {m++; l=0;}
+                    }
+                    // set the polarisation to the bend of the director
+                    k=l=m=0;
+                    int xup,xdwn,yup,ydwn,zup,zdwn,norm;
+                    for (j=0; j<LL; j++)
+                    {
+                        // define neighbouring nodes
+                        xup=j+1; xdwn=j-1; yup=j+Lx; ydwn=j-Lx; zup=j+Lx*Ly; zdwn=j-Lx*Ly;
+                        // correct for periodic boundaries
+                        if (k==0) {xdwn+=Lx;}
+                        if (k==Lx-1) {xup-=Lx;}
+                        if (l==0) {ydwn+=Lx*Ly;}
+                        if (l==Ly-1) {yup-=Lx*Ly;}
+                        if (m==0) {zdwn+=LL;}
+                        if (m==Lz-1) {zup-=LL;}
 
-                px[j] = nx[j]*(nx[xup]-nx[xdwn])+ny[j]*(nx[yup]-nx[ydwn])+nz[j]*(nx[zup]-nx[zdwn]);
-                py[j] = nx[j]*(ny[xup]-ny[xdwn])+ny[j]*(ny[yup]-ny[ydwn])+nz[j]*(ny[zup]-ny[zdwn]);
-                pz[j] = nx[j]*(nz[xup]-nz[xdwn])+ny[j]*(nz[yup]-nz[ydwn])+nz[j]*(nz[zup]-nz[zdwn]);
-                // normalise
-                norm = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
-                px[j] /= norm; py[j] /= norm; pz[j] /= norm;
+                        px[j] = nx[j]*(nx[xup]-nx[xdwn])+ny[j]*(nx[yup]-nx[ydwn])+nz[j]*(nx[zup]-nx[zdwn]);
+                        py[j] = nx[j]*(ny[xup]-ny[xdwn])+ny[j]*(ny[yup]-ny[ydwn])+nz[j]*(ny[zup]-ny[zdwn]);
+                        pz[j] = nx[j]*(nz[xup]-nz[xdwn])+ny[j]*(nz[yup]-nz[ydwn])+nz[j]*(nz[zup]-nz[zdwn]);
+                        // normalise
+                        norm = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
+                        px[j] /= norm; py[j] /= norm; pz[j] /= norm;
 
 #if BC // normal anchoring along z, so make the polarization zero here
-                if (m==0) {px[j] = 0.0; py[j] = 0.0; pz[j] = 0.0;}
-                if (m==Lz-1) {px[j] = 0.0; py[j] = 0.0; pz[j] = 0.0;}
+                        if (m==0) {px[j] = 0.0; py[j] = 0.0; pz[j] = 0.0;}
+                        if (m==Lz-1) {px[j] = 0.0; py[j] = 0.0; pz[j] = 0.0;}
 #endif
-                // deal with the periodic boundaries
-                k++;
-                if (k==Lx) {l++; k=0;}
-                if (l==Ly) {m++; l=0;}
+                        // deal with the periodic boundaries
+                        k++;
+                        if (k==Lx) {l++; k=0;}
+                        if (l==Ly) {m++; l=0;}
+                    }
+                } // end hopf
+
+                // square
+                if (SQUARE == 1)
+                {
+                    double r,R,phi;
+                    R = 0.8*Lx/2.0;
+
+                    for (j=0; j<LL; j++) {
+                        // default is heliconical texture
+                        // director field
+                        nx[j] = -sin(thetah)*cos(qh*m);
+                        ny[j] = -sin(thetah)*sin(qh*m);
+                        nz[j] = -cos(thetah);
+                        // polarisation
+                        px[j] = -sin(qh*m);
+                        py[j] = cos(qh*m);
+                        pz[j] = 0.0;
+                        // replace a cylinder with a twisted Skyrmion -- testing!
+                        r = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
+                        if (r<R) {
+                            phi = atan2(l-l0,k-k0);
+
+                            // nz is common to the twisted and untwisted cases
+                            nz[j] = cos(M_PI*r/R);
+
+                            // degree +1 , untwisted
+                            nx[j] = sin(M_PI*r/R)*sin(phi);
+                            ny[j] = -sin(M_PI*r/R)*cos(phi);
+                            // polarisation for +1 untwisted
+                            px[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*cos(phi)/r;
+                            py[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*sin(phi)/r;
+                            pz[j] = 0.0;
+
+                            // twisted
+                            //nx[j] = sin(M_PI*r/R)*sin(phi+2.0*M_PI*m/Lz);
+                            //ny[j] = -sin(M_PI*r/R)*cos(phi+2.0*M_PI*m/Lz);
+                            // polarisation for twisted
+                            //px[j] = cos(M_PI*r/R)*sin(2.0*M_PI*m/Lz)*sin(phi+2.0*M_PI*m/Lz)+((2.0*R/Lz)*cos(M_PI*r/R)-(R/(M_PI*r))*sin(M_PI*r/R)*cos(2.0*M_PI*m/Lz))*cos(phi+2.0*M_PI*m/Lz);
+                            //py[j] = -cos(M_PI*r/R)*sin(2.0*M_PI*m/Lz)*cos(phi+2.0*M_PI*m/Lz)+((2.0*R/Lz)*cos(M_PI*r/R)-(R/(M_PI*r))*sin(M_PI*r/R)*cos(2.0*M_PI*m/Lz))*sin(phi+2.0*M_PI*m/Lz);
+                            //pz[j] = -sin(M_PI*r/R)*sin(2.0*M_PI*m/Lz);
+
+                            // degree -1
+                            //	nx[j] = -sin(M_PI*r/R)*sin(phi);
+                            //	ny[j] = -sin(M_PI*r/R)*cos(phi);
+                        }
+                        // deal with the periodic boundaries
+                        k++;
+                        if (k==Lx) {l++; k=0;}
+                        if (l==Ly) {m++; l=0;}
+                    }
+                } // end square
+                break;
             }
-        } // end hopf
-
-        // square
-        if (SQUARE == 1)
-        {
-            double r,R,phi;
-            R = 0.8*Lx/2.0;
-
-            for (j=0; j<LL; j++) {
-                // default is heliconical texture
-                // director field
-                nx[j] = -sin(thetah)*cos(qh*m);
-                ny[j] = -sin(thetah)*sin(qh*m);
-                nz[j] = -cos(thetah);
-                // polarisation
-                px[j] = -sin(qh*m);
-                py[j] = cos(qh*m);
-                pz[j] = 0.0;
-                // replace a cylinder with a twisted Skyrmion -- testing!
-                r = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
-                if (r<R) {
-                    phi = atan2(l-l0,k-k0);
-
-                    // nz is common to the twisted and untwisted cases
-                    nz[j] = cos(M_PI*r/R);
-
-                    // degree +1 , untwisted
-                    nx[j] = sin(M_PI*r/R)*sin(phi);
-                    ny[j] = -sin(M_PI*r/R)*cos(phi);
-                    // polarisation for +1 untwisted
-                    px[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*cos(phi)/r;
-                    py[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*sin(phi)/r;
-                    pz[j] = 0.0;
-
-                    // twisted
-                    //nx[j] = sin(M_PI*r/R)*sin(phi+2.0*M_PI*m/Lz);
-                    //ny[j] = -sin(M_PI*r/R)*cos(phi+2.0*M_PI*m/Lz);
-                    // polarisation for twisted
-                    //px[j] = cos(M_PI*r/R)*sin(2.0*M_PI*m/Lz)*sin(phi+2.0*M_PI*m/Lz)+((2.0*R/Lz)*cos(M_PI*r/R)-(R/(M_PI*r))*sin(M_PI*r/R)*cos(2.0*M_PI*m/Lz))*cos(phi+2.0*M_PI*m/Lz);
-                    //py[j] = -cos(M_PI*r/R)*sin(2.0*M_PI*m/Lz)*cos(phi+2.0*M_PI*m/Lz)+((2.0*R/Lz)*cos(M_PI*r/R)-(R/(M_PI*r))*sin(M_PI*r/R)*cos(2.0*M_PI*m/Lz))*sin(phi+2.0*M_PI*m/Lz);
-                    //pz[j] = -sin(M_PI*r/R)*sin(2.0*M_PI*m/Lz);
-
-                    // degree -1
-                    //	nx[j] = -sin(M_PI*r/R)*sin(phi);
-                    //	ny[j] = -sin(M_PI*r/R)*cos(phi);
+        case FROM_FILE:
+            {
+                cout << "Reading input file...\n";
+                if(file_read(nx,ny,nz,px,py,pz)){ cout << "somethings not right with the read...\n";}
+                // get the start time -  we hack this together as so:
+                n = starttime;
+                break;
+            }
+        case FROM_SOLIDANGLE:
+            {
+                cout << "Initialising from a twisted solid angle function ...\n";
+                InitialiseSystemParameters();
+                int j,k,l,m;
+                double omega,alpha,R,rho;
+                // for initialising the polarisation
+                int xup,xdwn,yup,ydwn,zup,zdwn;
+                double norm;
+                // value of the Hopf invariant
+                int h;
+                h = 2;
+                // initialise the knot
+                Link Curve;
+                if(0==InitialiseFromFile(Curve))
+                {
+                    cout << "Filling in the Geometry of the Input Curve \n";
+                    ComputeGeometry(Curve);
+                    OutputScaledKnot(Curve);
                 }
-                // deal with the periodic boundaries
-                k++;
-                if (k==Lx) {l++; k=0;}
-                if (l==Ly) {m++; l=0;}
+                // initial configuration
+                k=l=m=0;
+                // radius for the tubular neighbourhood of the curve
+                R = 0.28*Lz;
+
+                viewpoint Point;
+                omega=0.0; alpha=0.0; // overly cautious!!
+
+                // compute omega and the initial director field
+                cout << "starting twisted solid angle calculation ...\n";
+                for (j=0; j<LL; j++) {
+                    // the far field director is the standard heliconical texture -- right handed
+                    nx[j] = sin(thetah)*cos(qh*m);
+                    ny[j] = sin(thetah)*sin(qh*m);
+                    nz[j] = cos(thetah);
+                    // polarisation
+                    px[j] = -sin(qh*m);
+                    py[j] = cos(qh*m);
+                    pz[j] = 0.0;
+                    // left handed
+                    //      nx[j] *= -1.0;
+                    //      px[j] *= -1.0;
+
+                    Point.xcoord = x(k); //1.0*k-Lx/2.0+0.5;
+                    Point.ycoord = y(l); //1.0*l-Ly/2.0+0.5;
+                    Point.zcoord = z(m); //1.0*m-Lz/2.0+0.5;
+
+                    // we need to calculate the distance to the curve
+                    rho = ComputeDistanceOnePoint(Curve,Point);
+
+                    // put a Skyrmion texture inside the tubular neighbourhood
+                    if (rho < R) {
+                        // here is the solid angle
+                        omega = ComputeSolidAngleOnePoint(Curve,Point);
+                        // simple thing -- not adapted to distinct components yet!!
+                        alpha = ComputeLongitudinalPhase(Curve,Point);
+
+                        // set the director -- fix me!
+                        // still need to be able to add Dehn twists to each component separately
+                        nx[j] = sin(M_PI*rho/R)*cos(0.5*omega-h*alpha);
+                        ny[j] = sin(M_PI*rho/R)*sin(0.5*omega-h*alpha);
+                        nz[j] = -cos(M_PI*rho/R);
+                    }
+
+                    k++;
+                    if (k==Lx) {l++; k=0;}
+                    if (l==Ly) {m++; l=0;}
+                }
+                // set the polarisation to the bend of the director
+                k=l=m=0;
+                for (j=0; j<LL; j++)
+                {
+                    Point.xcoord = k; //1.0*k-Lx/2.0+0.5;
+                    Point.ycoord = l; //1.0*l-Ly/2.0+0.5;
+                    Point.zcoord = m; //1.0*m-Lz/2.0+0.5;
+
+                    // we need to calculate the distance to the curve
+                    rho = ComputeDistanceOnePoint(Curve,Point);
+
+                    if (rho < R) {
+                        // define neighbouring nodes
+                        xup=j+1; xdwn=j-1; yup=j+Lx; ydwn=j-Lx; zup=j+Lx*Ly; zdwn=j-Lx*Ly;
+                        // correct for periodic boundaries
+                        if (k==0) {xdwn+=Lx;}
+                        if (k==Lx-1) {xup-=Lx;}
+                        if (l==0) {ydwn+=Lx*Ly;}
+                        if (l==Ly-1) {yup-=Lx*Ly;}
+                        if (m==0) {zdwn+=LL;}
+                        if (m==Lz-1) {zup-=LL;}
+
+                        px[j] = nx[j]*(nx[xup]-nx[xdwn])+ny[j]*(nx[yup]-nx[ydwn])+nz[j]*(nx[zup]-nx[zdwn]);
+                        py[j] = nx[j]*(ny[xup]-ny[xdwn])+ny[j]*(ny[yup]-ny[ydwn])+nz[j]*(ny[zup]-ny[zdwn]);
+                        pz[j] = nx[j]*(nz[xup]-nz[xdwn])+ny[j]*(nz[yup]-nz[ydwn])+nz[j]*(nz[zup]-nz[zdwn]);
+                        // normalise
+                        norm = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
+                        norm += 0.000001; // perhaps overly cautious!!
+                        px[j] /= norm; py[j] /= norm; pz[j] /= norm;
+                    }
+                    // deal with the periodic boundaries
+                    k++;
+                    if (k==Lx) {l++; k=0;}
+                    if (l==Ly) {m++; l=0;}
+                }
+
             }
-        } // end square
-        break;
-    }
-    case FROM_FILE:
-    {
-        cout << "Reading input file...\n";
-        if(file_read(nx,ny,nz,px,py,pz)){ cout << "somethings not right with the read...\n";}
-        // get the start time -  we hack this together as so:
-        n = starttime;
-        break;
-    }
-    case FROM_SOLIDANGLE:
-    {
-        cout << "Initialising from a twisted solid angle function ...\n";
-        InitialiseSystemParameters();
-        int j,k,l,m;
-        double omega,alpha,R,rho;
-        // for initialising the polarisation
-        int xup,xdwn,yup,ydwn,zup,zdwn;
-        double norm;
-        // value of the Hopf invariant
-        int h;
-        h = 2;
-        // initialise the knot
-        Link Curve;
-        if(0==InitialiseFromFile(Curve))
-        {
-            cout << "Filling in the Geometry of the Input Curve \n";
-            ComputeGeometry(Curve);
-            OutputScaledKnot(Curve);
-        }
-        // initial configuration
-        k=l=m=0;
-        // radius for the tubular neighbourhood of the curve
-        R = 0.28*Lz;
-
-        viewpoint Point;
-        omega=0.0; alpha=0.0; // overly cautious!!
-
-        // compute omega and the initial director field
-        cout << "starting twisted solid angle calculation ...\n";
-        for (j=0; j<LL; j++) {
-            // the far field director is the standard heliconical texture -- right handed
-            nx[j] = sin(thetah)*cos(qh*m);
-            ny[j] = sin(thetah)*sin(qh*m);
-            nz[j] = cos(thetah);
-            // polarisation
-            px[j] = -sin(qh*m);
-            py[j] = cos(qh*m);
-            pz[j] = 0.0;
-            // left handed
-            //      nx[j] *= -1.0;
-            //      px[j] *= -1.0;
-
-            Point.xcoord = x(k); //1.0*k-Lx/2.0+0.5;
-            Point.ycoord = y(l); //1.0*l-Ly/2.0+0.5;
-            Point.zcoord = z(m); //1.0*m-Lz/2.0+0.5;
-
-            // we need to calculate the distance to the curve
-            rho = ComputeDistanceOnePoint(Curve,Point);
-
-            // put a Skyrmion texture inside the tubular neighbourhood
-            if (rho < R) {
-                // here is the solid angle
-                omega = ComputeSolidAngleOnePoint(Curve,Point);
-                // simple thing -- not adapted to distinct components yet!!
-                alpha = ComputeLongitudinalPhase(Curve,Point);
-
-                // set the director -- fix me!
-                // still need to be able to add Dehn twists to each component separately
-                nx[j] = sin(M_PI*rho/R)*cos(0.5*omega-h*alpha);
-                ny[j] = sin(M_PI*rho/R)*sin(0.5*omega-h*alpha);
-                nz[j] = -cos(M_PI*rho/R);
-            }
-
-            k++;
-            if (k==Lx) {l++; k=0;}
-            if (l==Ly) {m++; l=0;}
-        }
-        // set the polarisation to the bend of the director
-        k=l=m=0;
-        for (j=0; j<LL; j++)
-        {
-            Point.xcoord = k; //1.0*k-Lx/2.0+0.5;
-            Point.ycoord = l; //1.0*l-Ly/2.0+0.5;
-            Point.zcoord = m; //1.0*m-Lz/2.0+0.5;
-
-            // we need to calculate the distance to the curve
-            rho = ComputeDistanceOnePoint(Curve,Point);
-
-            if (rho < R) {
-                // define neighbouring nodes
-                xup=j+1; xdwn=j-1; yup=j+Lx; ydwn=j-Lx; zup=j+Lx*Ly; zdwn=j-Lx*Ly;
-                // correct for periodic boundaries
-                if (k==0) {xdwn+=Lx;}
-                if (k==Lx-1) {xup-=Lx;}
-                if (l==0) {ydwn+=Lx*Ly;}
-                if (l==Ly-1) {yup-=Lx*Ly;}
-                if (m==0) {zdwn+=LL;}
-                if (m==Lz-1) {zup-=LL;}
-
-                px[j] = nx[j]*(nx[xup]-nx[xdwn])+ny[j]*(nx[yup]-nx[ydwn])+nz[j]*(nx[zup]-nx[zdwn]);
-                py[j] = nx[j]*(ny[xup]-ny[xdwn])+ny[j]*(ny[yup]-ny[ydwn])+nz[j]*(ny[zup]-ny[zdwn]);
-                pz[j] = nx[j]*(nz[xup]-nz[xdwn])+ny[j]*(nz[yup]-nz[ydwn])+nz[j]*(nz[zup]-nz[zdwn]);
-                // normalise
-                norm = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
-                norm += 0.000001; // perhaps overly cautious!!
-                px[j] /= norm; py[j] /= norm; pz[j] /= norm;
-            }
-            // deal with the periodic boundaries
-            k++;
-            if (k==Lx) {l++; k=0;}
-            if (l==Ly) {m++; l=0;}
-        }
-
-    }
     }
 }
 
@@ -865,7 +865,7 @@ void FindBendZeros(Link& Curve,double* nx,double* ny,double* nz, double* bx,doub
      *
      */
     // threshold for detecting another bend zero
-    const double threshold =0.01;
+    const double threshold =0.016;
     // The size of the hemisphere in front of the current point which the code searches for the next point to go to. The data is on a grid of size 1, so it makes no sense for this to be way below 1. some O(1) number here is good.
     const double sphereradius =1.2;
     // How many steps on the hemisphere the GSL minimizer should make. Ive found setting this too high makes the code more jagged. I don't reaaaaallly know why, perhaps being really picky about where the minimum is in "noisy" data causes it to run off.
@@ -1292,6 +1292,31 @@ void FindBendZeros(Link& Curve,double* nx,double* ny,double* nz, double* bx,doub
             Curve.Components[c].knotcurve[s].ndott =tx*tempnx+ty*tempny+tz*tempnz;
         }
     }
+    // linking and self linking numbers
+    Link.LinkingMatrix = vector<vector<double>>(Curve.Components[i].knotcurve.size(),vector<double>(Curve.Components[i].knotcurve.size(),99));
+    for(int i=0; i<Curve.Components.size(); j++)
+    {
+        // the self linking case 
+        int NP = Curve.Components[i].knotcurve.size();
+        vector<knotpoint> PushOff(NP);
+        double secondpustdist =2;
+        for(int s=0; s<NP; s++)
+        {
+            PushOff[s].xcoord =Curve.Components[i].knotcurve[s].xcoord+secondpushdist*Curve.Components[i].knotcurve[s].bx;
+            PushOff[s].ycoord =Curve.Components[i].knotcurve[s].ycoord+secondpushdist*Curve.Components[i].knotcurve[s].by;
+            PushOff[s].zcoord =Curve.Components[i].knotcurve[s].zcoord+secondpushdist*Curve.Components[i].knotcurve[s].bz;
+        }
+        Link.LinkingMatrix[i][i]=LinkingNumber(Curve.Components[i],PushOff);
+        for(int j=0; j<Curve.Components.size(); j++)
+        {
+            // self linking
+            if(i!=j)
+            {
+                // linking
+               Link.LinkingMatrix[i][j]= LinkingNumber(Curve.Components[i],Curve.Components[j]);
+            }
+        }
+    }
     // smooth the bend zero for presentation purposes
     CurveSmoothing(Curve,filterlength);
 }
@@ -1319,12 +1344,12 @@ void CurveSmoothing(Link& Curve, int filterlength)
 
             switch(k)
             {
-            case 1 :
-            {for(int i=0; i<NP; i++) {paddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].xcoord ;} break;}
-            case 2 :
-            {for(int i=0; i<NP; i++) {paddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].ycoord ;} break;}
-            case 3 :
-            {for(int i=0; i<NP; i++) {paddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].zcoord ;} break;}
+                case 1 :
+                    {for(int i=0; i<NP; i++) {paddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].xcoord ;} break;}
+                case 2 :
+                    {for(int i=0; i<NP; i++) {paddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].ycoord ;} break;}
+                case 3 :
+                    {for(int i=0; i<NP; i++) {paddedcoord[i+startindex] =  Curve.Components[c].knotcurve[i].zcoord ;} break;}
             }
 
             // im going to pad the ends of the array, not with zeros, but with the end values repeated
@@ -1342,12 +1367,12 @@ void CurveSmoothing(Link& Curve, int filterlength)
             // copy back in
             switch(k)
             {
-            case 1 :
-            {for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].xcoord = smoothedpaddedcoord[i] ;} break;}
-            case 2 :
-            {for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].ycoord = smoothedpaddedcoord[i] ;} break;}
-            case 3 :
-            { for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].zcoord = smoothedpaddedcoord[i] ;} break;}
+                case 1 :
+                    {for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].xcoord = smoothedpaddedcoord[i] ;} break;}
+                case 2 :
+                    {for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].ycoord = smoothedpaddedcoord[i] ;} break;}
+                case 3 :
+                    { for(int i=startindex; i<=endindex; i++) {Curve.Components[c].knotcurve[i-startindex].zcoord = smoothedpaddedcoord[i] ;} break;}
             }
 
         }
@@ -1451,5 +1476,34 @@ double z(int k)
     return (k+0.5-Lz/2.0);
 }
 
+double LinkingNumber(vector<knotcurve>& Curve1, vector<knotcurve>& Curve2)
+{
+    double dLinkingNumber=0;
+    int NP1 = Curve1.knotcurve.size();
+    int NP2 = Curve2.knotcurve.size();
+    for(int s1=0; s1<NP1; s1++)
+    {
+        double xcoord1 = Curve1[s1].xcoord;
+        double ycoord1 = Curve1[s1].ycoord;
+        double zcoord1 = Curve1[s1].zcoord;
+        double dx1 = (Curve1[(s1+1)%NP1].xcoord - Curve1[s1].xcoord);
+        double dy1 = (Curve1[(s1+1)%NP1].ycoord - Curve1[s1].ycoord);
+        double dz1 = (Curve1[(s1+1)%NP1].zcoord - Curve1[s1].zcoord);
+        for(int s2=0; s2<NP2; s2++)
+        {
+            double xcoord2 = Curve2[s2].xcoord;
+            double ycoord2 = Curve2[s2].ycoord;
+            double zcoord2 = Curve2[s2].zcoord;
+            double dx2 = (Curve2[(s2+1)%NP2].xcoord - Curve2[s2].xcoord);
+            double dy2 = (Curve2[(s2+1)%NP2].ycoord - Curve2[s2].ycoord);
+            double dz2 = (Curve2[(s2+1)%NP2].zcoord - Curve2[s2].zcoord);
+
+            num = (x2-x1)*(dy1*dz2-dz1*dy2)+(y2-y1)*(dz1*dx2-dx1*dz2)+(z2-z1)*(dx1*dy2-dy1*dx2);
+            denom = std:pow( (x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)+(z2-z1)*(z2-z1) , 1.5);
+            dLinkingNumber += (num/denom);
+        }
+    }
+    return dLinkingNumber;
+}
 
 

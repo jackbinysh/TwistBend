@@ -27,7 +27,7 @@ using namespace std;
 const int Nmax = 20000;       // Number of timesteps
 const int vtkstepskip = 500;   // print pitch and bend every stepskip timesteps
 const int curvestepskip = 500;   // print pitch and bend every stepskip timesteps
-const int curvestarttime = 7000;   // print pitch and bend every stepskip timesteps
+const int curvestarttime = 10000;   // print pitch and bend every stepskip timesteps
 const int Lx = 130;          // System size
 const int Ly = 130;          // System size
 const int Lz = 90;         // System size
@@ -48,11 +48,11 @@ const double U = C/9.0; // say
 
 // do we want to read in a file? If so, whats its name?
 enum InitialisationType {FROM_FUNCTION,FROM_FILE, FROM_SOLIDANGLE};
-const InitialisationType InitialisationMethod = FROM_FILE;
+const InitialisationType InitialisationMethod = FROM_FUNCTION;
 const string director_filename="vtk_data_6500.vtk";
 // the input filename, in the form "xxxxx.txt"
 const std::string knot_filename="Unknot";
-const int starttime=995000;
+const int starttime=0;
 const char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 
 // ============================================================
@@ -120,6 +120,7 @@ struct knotcurve
 struct Link
 {
     std::vector<knotcurve> Components;
+    std::vector<vector<double>> LinkingMatrix;
     // bounding box
     int NumPoints;
     double minx, maxx;
