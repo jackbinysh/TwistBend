@@ -245,7 +245,6 @@ void print_Curve( double t, Link& Curve, string Name)
             knotout << Curve.Components[c].knotcurve[i].length << '\n';
         }
 
-        knotout << "\n\nCELL_DATA " << n << "\n\n";
         knotout << "\nSCALARS ndott float\nLOOKUP_TABLE default\n";
         for(i=0; i<n; i++)
         {
