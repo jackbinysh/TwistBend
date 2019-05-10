@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS= -O3 -fopenmp 
+CXXFLAGS= -O3 -fopenmp  
 LDLIBS=  -lgsl -lgslcblas -lm  
 LDFLAGS = -O3 -fopenmp 
 OBJS= TriCubicInterpolator.o ReadingWriting.o twistbend.o  SolidAngle/SolidAngle.o SolidAngle/InputOutput.o SolidAngle/Geometry.o SolidAngle/Constants.o 

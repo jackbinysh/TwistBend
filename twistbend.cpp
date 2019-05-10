@@ -85,10 +85,8 @@ int main(int argc, char** argv)
                     cout << "writing the bend zeros at timestep " << n << endl;
                     computeBendTwistEnergyOrientation(n,nx,ny,nz,bx,by,bz,px,py,pz,bmag,twist,FreeEnergy,tx,ty,tz);
                     Link Curve;
-                    Link PushOffCurve;
-                    FindBendZeros(Curve,PushOffCurve,bx,by,bz, bmag,tx,ty,tz,mask);
+                    FindBendZeros(Curve,nx,ny,nz,bx,by,bz, bmag,tx,ty,tz,mask);
                     print_Curve(n,Curve, "vtk_bendzeros");
-                    print_Curve(n,PushOffCurve, "vtk_bendzerosPushOff");
 
                 }
                 n++;
@@ -200,8 +198,10 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
         {
             int xup,xdwn,yup,ydwn,zup,zdwn;
             double rho,theta,phi, rr, norm;    // variables for hopf texture
-            double RR = 0.5*Lz;  // scale
-            double RR2 =0.2*Lz;  // scale
+            // the raidus of the central core
+            double RR = 0.3*Lx;  // scale
+            // how fat the hopfion should be
+            double RR2 =0.25*Lx;  // scale
             for (j=0; j<LL; j++)
             {
                 // heliconical
@@ -857,7 +857,7 @@ void computeBendTwistEnergyOrientation(const int n, const double* nx,const doubl
     delete cz;
 }
 
-void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double* bz, double *magb,double* tx,double* ty,double* tz, bool* mask)
+void FindBendZeros(Link& Curve,double* nx,double* ny,double* nz, double* bx,double* by,double* bz, double *magb,double* tx,double* ty,double* tz, bool* mask)
 {
     /*
      *
@@ -880,7 +880,6 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
     const double filterlength=3;
     // when we do the two push offs, need to specify how far to push. roughly O(1) numbers again.
     double firstpushdist = 1;
-    double secondpushdist = 6;
     /*
      *
      *
@@ -1228,40 +1227,73 @@ void FindBendZeros(Link& Curve, Link& PushOffCurve, double* bx,double* by,double
     }
     delete phi;
 
-    // okay, we have the solid angle framing for the curve. Now do 2 push offs
+    // get the bend pushoff
     //  interpolation of the b vector
     likely::TriCubicInterpolator interpolatedbx(bx, 1, Lx,Ly,Lz);
     likely::TriCubicInterpolator interpolatedby(by, 1, Lx,Ly,Lz);
     likely::TriCubicInterpolator interpolatedbz(bz, 1, Lx,Ly,Lz);
     for(int c=0; c<Curve.Components.size(); c++)
     {
-        PushOffCurve.Components.push_back(Curve.Components[c]);
         int NP = Curve.Components[c].knotcurve.size();
-
-        // that was the first pushoff.For the second we push along the direction of b at this point
         for(int s=0; s<NP; s++)
         {
+            double tx= Curve.Components[c].knotcurve[s].tx;
+            double ty= Curve.Components[c].knotcurve[s].ty;
+            double tz= Curve.Components[c].knotcurve[s].tz;
+
+            // step off the curve along the seifert surface, to get a b vector
             double xcoord = Curve.Components[c].knotcurve[s].xcoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegax;
             double ycoord = Curve.Components[c].knotcurve[s].ycoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegay;
             double zcoord = Curve.Components[c].knotcurve[s].zcoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegaz;
             double tempbx = interpolatedbx(xcoord,ycoord,zcoord);
             double tempby = interpolatedby(xcoord,ycoord,zcoord);
             double tempbz = interpolatedbz(xcoord,ycoord,zcoord);
+
             double norm = sqrt(tempbx*tempbx + tempby*tempby + tempbz*tempbz);
             tempbx = tempbx/norm;
             tempby = tempby/norm;
             tempbz = tempbz/norm;
-            PushOffCurve.Components[c].knotcurve[s].bx =tempbx;
-            PushOffCurve.Components[c].knotcurve[s].by =tempby;
-            PushOffCurve.Components[c].knotcurve[s].bz =tempbz;
-            PushOffCurve.Components[c].knotcurve[s].xcoord =Curve.Components[c].knotcurve[s].xcoord+secondpushdist*tempbx;
-            PushOffCurve.Components[c].knotcurve[s].ycoord =Curve.Components[c].knotcurve[s].ycoord+secondpushdist*tempby;
-            PushOffCurve.Components[c].knotcurve[s].zcoord =Curve.Components[c].knotcurve[s].zcoord+secondpushdist*tempbz;
+            Curve.Components[c].knotcurve[s].bx =tempbx;
+            Curve.Components[c].knotcurve[s].by =tempby;
+            Curve.Components[c].knotcurve[s].bz =tempbz;
+
+            // I also want to project orthogonally and see if that makes a difference
+            double projtempbx = (tempbx - (tempbx*tx + tempby*ty + tempbz*tz)*tx);
+            double projtempby = (tempby - (tempbx*tx + tempby*ty + tempbz*tz)*ty);
+            double projtempbz = (tempbz - (tempbx*tx + tempby*ty + tempbz*tz)*tz);
+            norm = sqrt(projtempbx*projtempbx + projtempby*projtempby + projtempbz*projtempbz);
+            projtempbx = projtempbx/norm;
+            projtempby = projtempby/norm;
+            projtempbz = projtempbz/norm;
+            Curve.Components[c].knotcurve[s].projbx =projtempbx;
+            Curve.Components[c].knotcurve[s].projby =projtempby;
+            Curve.Components[c].knotcurve[s].projbz =projtempbz;
         }
     }
 
+    // find the legendrian points
+    likely::TriCubicInterpolator interpolatednx(nx, 1, Lx,Ly,Lz);
+    likely::TriCubicInterpolator interpolatedny(ny, 1, Lx,Ly,Lz);
+    likely::TriCubicInterpolator interpolatednz(nz, 1, Lx,Ly,Lz);
+    for(int c=0; c<Curve.Components.size(); c++)
+    {
+        int NP = Curve.Components[c].knotcurve.size();
+        for(int s=0; s<NP; s++)
+        {
+            double xcoord = Curve.Components[c].knotcurve[s].xcoord;
+            double ycoord = Curve.Components[c].knotcurve[s].ycoord;
+            double zcoord = Curve.Components[c].knotcurve[s].zcoord;
+            double tx= Curve.Components[c].knotcurve[s].tx;
+            double ty= Curve.Components[c].knotcurve[s].ty;
+            double tz= Curve.Components[c].knotcurve[s].tz;
+            double tempnx = interpolatednx(xcoord,ycoord,zcoord);
+            double tempny = interpolatedny(xcoord,ycoord,zcoord);
+            double tempnz = interpolatednz(xcoord,ycoord,zcoord);
+            Curve.Components[c].knotcurve[s].ndott =tx*tempnx+ty*tempny+tz*tempnz;
+        }
+    }
+    // smooth the bend zero for presentation purposes
     CurveSmoothing(Curve,filterlength);
-    CurveSmoothing(PushOffCurve,filterlength);
 }
 
 // curve smoothing via a low pass filter

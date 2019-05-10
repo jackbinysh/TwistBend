@@ -226,11 +226,30 @@ void print_Curve( double t, Link& Curve, string Name)
             knotout << Curve.Components[c].knotcurve[i].omegax << ' ' << Curve.Components[c].knotcurve[i].omegay << ' ' << Curve.Components[c].knotcurve[i].omegaz << '\n';
         }
 
+        knotout << "\nVECTORS BendPushoff float\n";
+        for(i=0; i<n; i++)
+        {
+            knotout << Curve.Components[c].knotcurve[i].bx << ' ' << Curve.Components[c].knotcurve[i].by << ' ' << Curve.Components[c].knotcurve[i].bz << '\n';
+        }
+
+        knotout << "\nVECTORS ProjectedBendPushoff float\n";
+        for(i=0; i<n; i++)
+        {
+            knotout << Curve.Components[c].knotcurve[i].projbx << ' ' << Curve.Components[c].knotcurve[i].projby << ' ' << Curve.Components[c].knotcurve[i].projbz << '\n';
+        }
+
         knotout << "\n\nCELL_DATA " << n << "\n\n";
         knotout << "\nSCALARS Length float\nLOOKUP_TABLE default\n";
         for(i=0; i<n; i++)
         {
             knotout << Curve.Components[c].knotcurve[i].length << '\n';
+        }
+
+        knotout << "\n\nCELL_DATA " << n << "\n\n";
+        knotout << "\nSCALARS ndott float\nLOOKUP_TABLE default\n";
+        for(i=0; i<n; i++)
+        {
+            knotout << Curve.Components[c].knotcurve[i].ndott << '\n';
         }
 
         knotout.close();
