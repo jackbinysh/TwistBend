@@ -178,13 +178,13 @@ int InitialiseFromFile(Link& Curve)
     return 0;
 }
 
-void OutputSolidAngle(const Link& Curve,const vector<double>& omega,const string filename)
+void OutputSolidAngle(const Link& Curve,const double* omega,const string filename)
 {
-    string fn = "Knots/" + knot_filename + "/" + filename+".vtk";
+    string fn =  filename+".vtk";
     ofstream Aout (fn.c_str());
     Aout << "# vtk DataFile Version 3.0\nKnot\nASCII\nDATASET STRUCTURED_POINTS\n";
     Aout << "DIMENSIONS " << Lx << ' ' << Ly << ' ' << Lz << '\n';
-    Aout << "ORIGIN " << x(0) << ' ' << y(0) << ' ' << z(0) << '\n';
+    Aout << "ORIGIN " << 0 << ' ' << 0 << ' ' << 0 << '\n';
     Aout << "SPACING " << 1 << ' ' << 1 << ' ' << 1 << '\n';
     Aout << "POINT_DATA " << Lx*Ly*Lz << '\n';
     Aout << "SCALARS omega float\nLOOKUP_TABLE default\n";
@@ -204,13 +204,13 @@ void OutputSolidAngle(const Link& Curve,const vector<double>& omega,const string
 
 void OutputScaledKnot(Link& Curve)
 {
-    for( int c=0; c < NumComponents ; c++)
+    for( int c=0; c < 1 ; c++)
     {
         stringstream ss;
         ss.str("");
         ss.clear();
 
-        ss << "Knots/" << knot_filename << "/" << "ParaViewBoundaryCurve_" << knot_filename << "_" << c<< ".obj";
+        ss <<  "ParaViewBoundaryCurve_" << "_" << c<< ".obj";
         ofstream knotout (ss.str().c_str());
 
         int i;

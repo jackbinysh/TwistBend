@@ -388,13 +388,51 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                     double RR = 0.25*Lx;  // scale
                     // how fat the tubular neighborhood should be
                     double RR2 =0.15*Lx;  // scale
+
+                    // solid angle fn for the loop
+                    Link Curve;
+                    Curve.Components.resize(1);
+                    double maxxin = 0;
+                    double maxyin = 0;
+                    double maxzin = 0;
+                    double minxin = 0;
+                    double minyin = 0;
+                    double minzin = 0;
+                    for(int i=0; i<100;i++)
+                    {
+                        double xcoord,ycoord,zcoord;
+                        knotpoint Point;
+                        xcoord = RR*cos((2*M_PI*i)/100.0)+k0;
+                        ycoord = RR*sin((2*M_PI*i)/100.0)+l0;
+                        zcoord =m0;
+                        Point.xcoord = xcoord;
+                        Point.ycoord = ycoord;
+                        Point.zcoord = zcoord;
+                        Curve.Components[0].knotcurve.push_back(Point);
+                        if(xcoord>maxxin) maxxin = xcoord;
+                        if(ycoord>maxyin) maxyin = ycoord;
+                        if(zcoord>maxzin) maxzin = zcoord;
+                        if(xcoord<minxin) minxin = xcoord;
+                        if(ycoord<minyin) minyin = ycoord;
+                        if(zcoord<minzin) minzin = zcoord;
+                    }
+                    cout << "Filling in the Geometry of the Input Curve \n";
+                    ComputeGeometry(Curve);
+                    double* omega=new double[LL];
+                    OutputScaledKnot(Curve);
+                    ComputeSolidAngleAllPoints(Curve,omega);
+                    OutputSolidAngle(Curve,omega,"solidangle");
+
                     for (j=0; j<LL; j++)
                     {
                         // begin with a heliconical director
                         // director field
-                        nx[j] = 0;
-                        ny[j] = 0; 
-                        nz[j]= 1;
+                        phi = omega[j];
+                        
+                        nx[j] = (1.0/sqrt(2))*sin(phi);
+                        ny[j] = (1.0/sqrt(2))*sin(phi);
+                        nz[j]= cos(phi);
+                       
                         // polarisation
                         px[j] = -sin(qh*m);
                         py[j] = cos(qh*m);
@@ -448,36 +486,47 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
 
                             // okay, now get the uv coodinates of our xyz point
                             // r- r0
-                            double drx = ((k-k0)-(RR/rr)*(k-k0))/(10*RR2);
-                            double dry = ((l-l0)-(RR/rr)*(l-l0))/(10*RR2);
-                            double drz = (m-m0)/(10*RR2);
+                            double drx = ((k-k0)-(RR/rr)*(k-k0));
+                            double dry = ((l-l0)-(RR/rr)*(l-l0));
+                            double drz = (m-m0);
 
                             double u = drx*e10x +dry*e10y + drz*e10z;
                             double v = drx*e20x +dry*e20y + drz*e20z;
 
+                            // these coordinates are in the same dimensions as the tube radius RR2.
+                            // we want to rescale the uv coordinates across this tube, say so that u, v reach maximum values of 1/10 on the tube
+                            u = u/(RR2);
+                            v = v/(RR2);
+
                             // okay now give the director in the tubular nbhd
 
-                            double nxcomp=(2*u + v*v +3*u*u); 
-                            double nycomp = 3*u -2*v*v + 2*u*u;
-                            double nzcomp = sqrt(1-nx[j]*nx[j]-ny[j]*ny[j]);
+                           // double nxcomp=(u + v*v +3*u*u); 
+                           // double nycomp =u -2*v*v + 2*u*u;
+                           // double nxcomp=u*(1-sqrt(u*u +v*v));
+                           // double nycomp=2*u*(1-sqrt(u*u +v*v));
+                           // double nzcomp = sqrt(1-nx[j]*nx[j]-ny[j]*ny[j]);
+                           nx[j]*=rho/RR2;
+                           ny[j]*=rho/RR2;
 
-                            nx[j] = nxcomp*d10x + nycomp*d20x +nzcomp*d30x;
+                           nx[j] = nxcomp*d10x + nycomp*d20x +nzcomp*d30x;
                             ny[j] = nxcomp*d10y + nycomp*d20y +nzcomp*d30y;
-                            nz[j]= sqrt(1-nx[j]*nx[j]-ny[j]*ny[j]);
+                           nz[j]= sqrt(1-nx[j]*nx[j]-ny[j]*ny[j]);
 
                             px[j] = 0;
                             py[j] = 0;
                             pz[j] = 0.0;
 
                             // going to try and smooth into the uniform state in a radial fashion
+                            
                             /*
-                            if(rho>0.7*RR2)
+                            if(rho>0.01*RR2)
                             {
-                                nx[j] = exp(-2*(rho/RR2-0.7))*nx[j];
-                                ny[j] = exp(-2*(rho/RR2-0.7))*ny[j];
+                                nx[j] = exp(-0.1*(rho/RR2))*nx[j];
+                                ny[j] = exp(-0.1*(rho/RR2))*ny[j];
                                 nz[j]= sqrt(1-nx[j]*nx[j]-ny[j]*ny[j]);
                             }
                             */
+                            
                         }
 
 #if BC // normal anchoring along z
