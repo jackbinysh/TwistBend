@@ -151,14 +151,15 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
             {
                 // k,l,m  are x,y,z indices, j is 1-d loop index.
                 int j,k,l,m;
-                int HELICONICAL,HOPF,SQUARE,HOPF2;
+                int HELICONICAL,HOPF,SQUARE,HOPF2, BENDZERO;
                 double k0,l0,m0;
 
                 // define texture to simulate -- 0 or 1
                 HELICONICAL = 0; // standard heliconical texture
-                HOPF = 1; // Hopf texture
+                HOPF = 0; // Hopf texture
                 HOPF2 = 0; // Hopf texture
                 SQUARE = 0;
+                BENDZERO=1;
 
                 // initial configuration
                 k=l=m=0;
@@ -201,7 +202,7 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                     // the raidus of the central core
                     double RR = 0.2*Lx;  // scale
                     // how fat the hopfion should be
-                    double RR2 =0.15*Lx;  // scale
+                    double RR2 =0.05*Lx;  // scale
                     for (j=0; j<LL; j++)
                     {
                         // heliconical
@@ -277,7 +278,6 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                         if (l==Ly) {m++; l=0;}
                     }
                 } // end hopf
-
                 if (HOPF2 == 1)
                 {
                     for (j=0; j<LL; j++)
@@ -380,6 +380,145 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                         if (l==Ly) {m++; l=0;}
                     }
                 } // end square
+                if( BENDZERO == 1)
+                {
+                    int xup,xdwn,yup,ydwn,zup,zdwn;
+                    double rho,theta,phi, rr, norm;    // variables for hopf texture
+                    // the radius of the circle 
+                    double RR = 0.25*Lx;  // scale
+                    // how fat the tubular neighborhood should be
+                    double RR2 =0.15*Lx;  // scale
+                    for (j=0; j<LL; j++)
+                    {
+                        // begin with a heliconical director
+                        // director field
+                        nx[j] = 0;
+                        ny[j] = 0; 
+                        nz[j]= 1;
+                        // polarisation
+                        px[j] = -sin(qh*m);
+                        py[j] = cos(qh*m);
+                        pz[j] = 0.0;
+
+                        // now we do our tubular nbhd
+
+                        // xy plane distance to z axis.
+                        rr = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
+                        rho = sqrt((rr-RR)*(rr-RR)+(m-m0)*(m-m0));
+
+                        // inside the tube, paste our local model for a bend zero
+                        if (rho < RR2)
+                        {
+                            double phi = (M_PI/2.0) - 0.05;
+                            theta = atan2(l-l0,k-k0);
+
+                            // the tubular neighborhood framing system
+                            double e30x = -sin(theta);
+                            double e30y = cos(theta);
+                            double e30z = 0;
+                            norm = sqrt(e30x*e30x + e30y*e30y +e30z*e30z);
+                            e30x /=norm;
+                            e30y /=norm;
+                            e30z /=norm;
+
+                            double e10x =cos(theta); 
+                            double e10y =sin(theta);
+                            double e10z = 0;
+                            norm = sqrt(e10x*e10x + e10y*e10y +e10z*e10z);
+                            e10x /=norm;
+                            e10y /=norm;
+                            e10z /=norm;
+
+                            double e20x = 0;
+                            double e20y = 0;
+                            double e20z = 1;
+
+                            // the director framing
+                            double d30x = cos(phi)*e30x + sin(phi)*e20x;
+                            double d30y = cos(phi)*e30y + sin(phi)*e20y;
+                            double d30z = cos(phi)*e30z + sin(phi)*e20z;
+
+                            double d10x = e10x;
+                            double d10y = e10y;
+                            double d10z = e10z;
+
+                            double d20x = d30y*d10z - d30z*d10y;
+                            double d20y = d30z*d10x - d30x*d10x;
+                            double d20z = d30x*d10y - d30y*d10z;
+
+                            // okay, now get the uv coodinates of our xyz point
+                            // r- r0
+                            double drx = ((k-k0)-(RR/rr)*(k-k0))/(10*RR2);
+                            double dry = ((l-l0)-(RR/rr)*(l-l0))/(10*RR2);
+                            double drz = (m-m0)/(10*RR2);
+
+                            double u = drx*e10x +dry*e10y + drz*e10z;
+                            double v = drx*e20x +dry*e20y + drz*e20z;
+
+                            // okay now give the director in the tubular nbhd
+
+                            double nxcomp=(2*u + v*v +3*u*u); 
+                            double nycomp = 3*u -2*v*v + 2*u*u;
+                            double nzcomp = sqrt(1-nx[j]*nx[j]-ny[j]*ny[j]);
+
+                            nx[j] = nxcomp*d10x + nycomp*d20x +nzcomp*d30x;
+                            ny[j] = nxcomp*d10y + nycomp*d20y +nzcomp*d30y;
+                            nz[j]= sqrt(1-nx[j]*nx[j]-ny[j]*ny[j]);
+
+                            px[j] = 0;
+                            py[j] = 0;
+                            pz[j] = 0.0;
+
+                            // going to try and smooth into the uniform state in a radial fashion
+                            /*
+                            if(rho>0.7*RR2)
+                            {
+                                nx[j] = exp(-2*(rho/RR2-0.7))*nx[j];
+                                ny[j] = exp(-2*(rho/RR2-0.7))*ny[j];
+                                nz[j]= sqrt(1-nx[j]*nx[j]-ny[j]*ny[j]);
+                            }
+                            */
+                        }
+
+#if BC // normal anchoring along z
+                        if (m==0) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
+                        if (m==Lz-1) {nx[j] = 0.0; ny[j] = 0.0; nz[j] = 1.0;}
+#endif
+                        // deal with the periodic boundaries
+                        k++;
+                        if (k==Lx) {l++; k=0;}
+                        if (l==Ly) {m++; l=0;}
+                    }
+                    // set the polarisation to the bend of the director
+                    k=l=m=0;
+                    for (j=0; j<LL; j++)
+                    {
+                        // hack here ??
+                        rr = sqrt((k-k0)*(k-k0)+(l-l0)*(l-l0));
+                        rho = sqrt((rr-RR)*(rr-RR)+(m-m0)*(m-m0));
+                        // define neighbouring nodes
+                        xup=j+1; xdwn=j-1; yup=j+Lx; ydwn=j-Lx; zup=j+Lx*Ly; zdwn=j-Lx*Ly;
+                        // correct for periodic boundaries
+                        if (k==0) {xdwn+=Lx;}
+                        if (k==Lx-1) {xup-=Lx;}
+                        if (l==0) {ydwn+=Lx*Ly;}
+                        if (l==Ly-1) {yup-=Lx*Ly;}
+                        if (m==0) {zdwn+=LL;}
+                        if (m==Lz-1) {zup-=LL;}
+                        if (rho < RR2) {
+                            px[j] = nx[j]*(nx[xup]-nx[xdwn])+ny[j]*(nx[yup]-nx[ydwn])+nz[j]*(nx[zup]-nx[zdwn]);
+                            py[j] = nx[j]*(ny[xup]-ny[xdwn])+ny[j]*(ny[yup]-ny[ydwn])+nz[j]*(ny[zup]-ny[zdwn]);
+                            pz[j] = nx[j]*(nz[xup]-nz[xdwn])+ny[j]*(nz[yup]-nz[ydwn])+nz[j]*(nz[zup]-nz[zdwn]);
+                            // normalise
+                            norm = sqrt(px[j]*px[j]+py[j]*py[j]+pz[j]*pz[j]);
+                            px[j] /= norm; py[j] /= norm; pz[j] /= norm;
+                        }
+                        // deal with the periodic boundaries
+                        k++;
+                        if (k==Lx) {l++; k=0;}
+                        if (l==Ly) {m++; l=0;}
+                    }
+                }
                 break;
             }
         case FROM_FILE:
@@ -1293,6 +1432,7 @@ void FindBendZeros(Link& Curve,double* nx,double* ny,double* nz, double* bx,doub
         }
     }
     // linking and self linking numbers
+    /*
     Curve.LinkingMatrix = vector<vector<double>>(Curve.Components.size(),vector<double>(Curve.Components.size(),99));
     for(int i=0; i<Curve.Components.size(); i++)
     {
@@ -1317,6 +1457,7 @@ void FindBendZeros(Link& Curve,double* nx,double* ny,double* nz, double* bx,doub
             }
         }
     }
+    */
     // smooth the bend zero for presentation purposes
     CurveSmoothing(Curve,filterlength);
 }

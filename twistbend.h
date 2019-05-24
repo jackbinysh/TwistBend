@@ -25,12 +25,12 @@ using namespace std;
 // ============================================================
 
 const int Nmax = 20000;       // Number of timesteps
-const int vtkstepskip = 500;   // print pitch and bend every stepskip timesteps
+const int vtkstepskip = 50;   // print pitch and bend every stepskip timesteps
 const int curvestepskip = 500;   // print pitch and bend every stepskip timesteps
 const int curvestarttime = 10000;   // print pitch and bend every stepskip timesteps
-const int Lx = 130;          // System size
-const int Ly = 130;          // System size
-const int Lz = 90;         // System size
+const int Lx = 100;          // System size
+const int Ly = 100;          // System size
+const int Lz = 100;         // System size
 
 #define BC 1 // periodic (0) or fixed (1) boundary conditions -- currently only fixed along z
 
@@ -38,10 +38,13 @@ const int Lz = 90;         // System size
 const int    LL=Lx*Ly*Lz;     // total system size
 const double    K = 0.04;       // elastic constant
 const double dt = 0.65;        // integration timestep
-const double thetah = M_PI/11.0;  // heliconical angle
-const double qh = (2.0*M_PI/Lz);  // heliconical pitch
-// lambda = (Kq/2) tan(2thetah)
-const double lambda = 0.5*K*qh*tan(2.0*thetah);
+//const double thetah = M_PI/11.0;  // heliconical angle
+const double thetah = 0;  // heliconical angle
+//const double qh = 0.1*(2.0*M_PI/Lz);  // heliconical pitch
+const double qh = 0;  // heliconical pitch
+//lambda = (Kq/2) tan(2thetah)
+//const double lambda = 0.5*K*qh*tan(2.0*thetah);
+const double lambda = 0;
 // C = K sin^4(thetah)/cos(2thetah)
 const double C = K*pow(sin(thetah),4)/cos(2.0*thetah);
 const double U = C/9.0; // say
@@ -49,7 +52,7 @@ const double U = C/9.0; // say
 // do we want to read in a file? If so, whats its name?
 enum InitialisationType {FROM_FUNCTION,FROM_FILE, FROM_SOLIDANGLE};
 const InitialisationType InitialisationMethod = FROM_FUNCTION;
-const string director_filename="vtk_data_6500.vtk";
+const string director_filename="vtk_data_1150.vtk";
 // the input filename, in the form "xxxxx.txt"
 const std::string knot_filename="Unknot";
 const int starttime=0;
