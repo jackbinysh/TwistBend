@@ -62,7 +62,15 @@ int main(int argc, char** argv)
     setupmask(mask);
     cout << " Finished the initialisation, starting simulation" << endl;
 
-#pragma omp parallel default(none) shared(nx,ny,nz, hx,hy,hz,px,py,pz,hpx,hpy,hpz, bx,by,bz,bmag, tx,ty,tz,twist, FreeEnergy, n,mask,cout)
+    // the summary stats file
+    char buf[128];
+    FILE *fileStats;
+    sprintf(buf,"summary_statistics.dat");
+    fileStats=fopen(buf,"a");
+    setbuf(fileStats, NULL);
+    fprintf(fileStats, "timestep  FreeEnergy\n"); 
+
+#pragma omp parallel default(none) shared(fileStats,nx,ny,nz, hx,hy,hz,px,py,pz,hpx,hpy,hpz, bx,by,bz,bmag, tx,ty,tz,twist, FreeEnergy, n,mask,cout)
     {
         while(n<=Nmax)
         {
@@ -79,6 +87,7 @@ int main(int argc, char** argv)
                     computeBendTwistEnergyOrientation(n,nx,ny,nz,bx,by,bz,px,py,pz,bmag,twist,FreeEnergy,tx,ty,tz);
                     writeVTKfiles(n,nx,ny,nz,px,py,pz,bx,by,bz,tx,ty,tz,twist,FreeEnergy);       // output VTK files for use with ParaView
                     // writeCustomPoints(n,nx,ny,nz,bx,by,bz);       // output VTK files for use with ParaView
+                    writeStatistics(fileStats,n,FreeEnergy);  // output measurements
                 }
                 if ((n>=curvestarttime) &&(n%curvestepskip==0))
                 {
@@ -158,8 +167,8 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                 HELICONICAL = 0; // standard heliconical texture
                 HOPF = 0; // Hopf texture
                 HOPF2 = 0; // Hopf texture
-                SQUARE = 0;
-                BENDZERO=1;
+                SQUARE = 1;
+                BENDZERO=0;
 
                 // initial configuration
                 k=l=m=0;
@@ -505,12 +514,12 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                            // double nxcomp=u*(1-sqrt(u*u +v*v));
                            // double nycomp=2*u*(1-sqrt(u*u +v*v));
                            // double nzcomp = sqrt(1-nx[j]*nx[j]-ny[j]*ny[j]);
-                           nx[j]*=rho/RR2;
-                           ny[j]*=rho/RR2;
+                           //nx[j]*=rho/RR2;
+                           //ny[j]*=rho/RR2;
 
-                           nx[j] = nxcomp*d10x + nycomp*d20x +nzcomp*d30x;
-                            ny[j] = nxcomp*d10y + nycomp*d20y +nzcomp*d30y;
-                           nz[j]= sqrt(1-nx[j]*nx[j]-ny[j]*ny[j]);
+                           //nx[j] = nxcomp*d10x + nycomp*d20x +nzcomp*d30x;
+                           // ny[j] = nxcomp*d10y + nycomp*d20y +nzcomp*d30y;
+                           //nz[j]= sqrt(1-nx[j]*nx[j]-ny[j]*ny[j]);
 
                             px[j] = 0;
                             py[j] = 0;

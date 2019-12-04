@@ -367,3 +367,15 @@ void writeCustomPoints(double t,double *nx,double *ny, double *nz,double *bx,dou
     }
     knotout.close();
 }
+
+void writeStatistics(FILE* filestats,int n,double* FreeEnergy)
+{
+  double totalFreeEnergy=0; 
+
+  for(int l=0;l<LL;l++)
+  {
+    totalFreeEnergy+=FreeEnergy[l];
+  }
+
+  fprintf(filestats, "%d %e\n",n,totalFreeEnergy);
+}  
