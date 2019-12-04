@@ -221,6 +221,7 @@ void print_Curve( double t, Link& Curve, string Name)
         }
 
 
+        /*
         knotout << "\nVECTORS Omega float\n";
         for(i=0; i<n; i++)
         {
@@ -238,6 +239,7 @@ void print_Curve( double t, Link& Curve, string Name)
         {
             knotout << Curve.Components[c].knotcurve[i].projbx << ' ' << Curve.Components[c].knotcurve[i].projby << ' ' << Curve.Components[c].knotcurve[i].projbz << '\n';
         }
+        */
 
         knotout << "\n\nCELL_DATA " << n << "\n\n";
         knotout << "\nSCALARS Length float\nLOOKUP_TABLE default\n";
@@ -255,6 +257,7 @@ void print_Curve( double t, Link& Curve, string Name)
         knotout.close();
     }
     // now print the linking matrix
+    /*
     stringstream ss;
     ss.str("");
     ss.clear();
@@ -270,6 +273,7 @@ void print_Curve( double t, Link& Curve, string Name)
         }
         LinkingMatrixout <<"\n";
     }
+    */
 }
 
 
