@@ -1413,60 +1413,60 @@ void FindBendZeros(Link& Curve,double* nx,double* ny,double* nz, double* bx,doub
 
     //get the solid angle framings of each individual curve component. These have zero linking number with the components itself.
     // Note: this isnt the same as the solid angle framing for the whole link. in that case, that framing has SL(k_i) = -sum Lk(k_i,k_j). Im treating each component individually, ignoring the others.
-    double* phi = new double[LL];
-    for(int c=0; c<Curve.Components.size(); c++)
-    {
-        Link tempCurve;
-        tempCurve.Components.push_back(Curve.Components[c]);
-        ComputeSolidAngleAllPoints(tempCurve, phi);
-        ComputeSolidAngleFraming(tempCurve,phi);
-        Curve.Components[c]=tempCurve.Components[0];
-    }
-    delete phi;
+  //  double* phi = new double[LL];
+  //  for(int c=0; c<Curve.Components.size(); c++)
+  //  {
+  //      Link tempCurve;
+  //      tempCurve.Components.push_back(Curve.Components[c]);
+  //      ComputeSolidAngleAllPoints(tempCurve, phi);
+  //      ComputeSolidAngleFraming(tempCurve,phi);
+  //      Curve.Components[c]=tempCurve.Components[0];
+  //  }
+  //  delete phi;
 
     // get the bend pushoff
     //  interpolation of the b vector
-    likely::TriCubicInterpolator interpolatedbx(bx, 1, Lx,Ly,Lz);
-    likely::TriCubicInterpolator interpolatedby(by, 1, Lx,Ly,Lz);
-    likely::TriCubicInterpolator interpolatedbz(bz, 1, Lx,Ly,Lz);
-    for(int c=0; c<Curve.Components.size(); c++)
-    {
-        int NP = Curve.Components[c].knotcurve.size();
-        for(int s=0; s<NP; s++)
-        {
-            double tx= Curve.Components[c].knotcurve[s].tx;
-            double ty= Curve.Components[c].knotcurve[s].ty;
-            double tz= Curve.Components[c].knotcurve[s].tz;
+  //  likely::TriCubicInterpolator interpolatedbx(bx, 1, Lx,Ly,Lz);
+  //  likely::TriCubicInterpolator interpolatedby(by, 1, Lx,Ly,Lz);
+  //  likely::TriCubicInterpolator interpolatedbz(bz, 1, Lx,Ly,Lz);
+  //  for(int c=0; c<Curve.Components.size(); c++)
+  //  {
+  //      int NP = Curve.Components[c].knotcurve.size();
+  //      for(int s=0; s<NP; s++)
+  //      {
+  //          double tx= Curve.Components[c].knotcurve[s].tx;
+  //          double ty= Curve.Components[c].knotcurve[s].ty;
+  //          double tz= Curve.Components[c].knotcurve[s].tz;
 
-            // step off the curve along the seifert surface, to get a b vector
-            double xcoord = Curve.Components[c].knotcurve[s].xcoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegax;
-            double ycoord = Curve.Components[c].knotcurve[s].ycoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegay;
-            double zcoord = Curve.Components[c].knotcurve[s].zcoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegaz;
-            double tempbx = interpolatedbx(xcoord,ycoord,zcoord);
-            double tempby = interpolatedby(xcoord,ycoord,zcoord);
-            double tempbz = interpolatedbz(xcoord,ycoord,zcoord);
+  //          // step off the curve along the seifert surface, to get a b vector
+  //          double xcoord = Curve.Components[c].knotcurve[s].xcoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegax;
+  //          double ycoord = Curve.Components[c].knotcurve[s].ycoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegay;
+  //          double zcoord = Curve.Components[c].knotcurve[s].zcoord+ firstpushdist*Curve.Components[c].knotcurve[s].omegaz;
+  //          double tempbx = interpolatedbx(xcoord,ycoord,zcoord);
+  //          double tempby = interpolatedby(xcoord,ycoord,zcoord);
+  //          double tempbz = interpolatedbz(xcoord,ycoord,zcoord);
 
-            double norm = sqrt(tempbx*tempbx + tempby*tempby + tempbz*tempbz);
-            tempbx = tempbx/norm;
-            tempby = tempby/norm;
-            tempbz = tempbz/norm;
-            Curve.Components[c].knotcurve[s].bx =tempbx;
-            Curve.Components[c].knotcurve[s].by =tempby;
-            Curve.Components[c].knotcurve[s].bz =tempbz;
+  //          double norm = sqrt(tempbx*tempbx + tempby*tempby + tempbz*tempbz);
+  //          tempbx = tempbx/norm;
+  //          tempby = tempby/norm;
+  //          tempbz = tempbz/norm;
+  //          Curve.Components[c].knotcurve[s].bx =tempbx;
+  //          Curve.Components[c].knotcurve[s].by =tempby;
+  //          Curve.Components[c].knotcurve[s].bz =tempbz;
 
-            // I also want to project orthogonally and see if that makes a difference
-            double projtempbx = (tempbx - (tempbx*tx + tempby*ty + tempbz*tz)*tx);
-            double projtempby = (tempby - (tempbx*tx + tempby*ty + tempbz*tz)*ty);
-            double projtempbz = (tempbz - (tempbx*tx + tempby*ty + tempbz*tz)*tz);
-            norm = sqrt(projtempbx*projtempbx + projtempby*projtempby + projtempbz*projtempbz);
-            projtempbx = projtempbx/norm;
-            projtempby = projtempby/norm;
-            projtempbz = projtempbz/norm;
-            Curve.Components[c].knotcurve[s].projbx =projtempbx;
-            Curve.Components[c].knotcurve[s].projby =projtempby;
-            Curve.Components[c].knotcurve[s].projbz =projtempbz;
-        }
-    }
+  //          // I also want to project orthogonally and see if that makes a difference
+  //          double projtempbx = (tempbx - (tempbx*tx + tempby*ty + tempbz*tz)*tx);
+  //          double projtempby = (tempby - (tempbx*tx + tempby*ty + tempbz*tz)*ty);
+  //          double projtempbz = (tempbz - (tempbx*tx + tempby*ty + tempbz*tz)*tz);
+  //          norm = sqrt(projtempbx*projtempbx + projtempby*projtempby + projtempbz*projtempbz);
+  //          projtempbx = projtempbx/norm;
+  //          projtempby = projtempby/norm;
+  //          projtempbz = projtempbz/norm;
+  //          Curve.Components[c].knotcurve[s].projbx =projtempbx;
+  //          Curve.Components[c].knotcurve[s].projby =projtempby;
+  //          Curve.Components[c].knotcurve[s].projbz =projtempbz;
+  //      }
+  //  }
 
     // find the legendrian points
     likely::TriCubicInterpolator interpolatednx(nx, 1, Lx,Ly,Lz);
