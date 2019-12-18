@@ -160,14 +160,15 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
             {
                 // k,l,m  are x,y,z indices, j is 1-d loop index.
                 int j,k,l,m;
-                int HELICONICAL,HOPF,SQUARE,HOPF2, BENDZERO;
+                int LATTICE,HELICONICAL,HOPF,SQUARE,HOPF2, BENDZERO;
                 double k0,l0,m0;
 
                 // define texture to simulate -- 0 or 1
                 HELICONICAL = 0; // standard heliconical texture
                 HOPF = 0; // Hopf texture
                 HOPF2 = 0; // Hopf texture
-                SQUARE = 1;
+                SQUARE = 0;
+                LATTICE = 1;
                 BENDZERO=0;
 
                 // initial configuration
@@ -389,6 +390,67 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                         if (l==Ly) {m++; l=0;}
                     }
                 } // end square
+                if(LATTICE==1)
+                {
+                  // begin by filling the box with heliconical
+                  for (j=0; j<LL; j++)
+                  {
+                      // director field
+                      nx[j] = sin(thetah)*cos(qh*m);
+                      ny[j] = sin(thetah)*sin(qh*m);
+                      nz[j] = cos(thetah);
+                      // polarisation
+                      px[j] = -sin(qh*m);
+                      py[j] = cos(qh*m);
+                      pz[j] = 0.0;
+                      // deal with the periodic boundaries
+                      k++;
+                      if (k==Lx) {l++; k=0;}
+                      if (l==Ly) {m++; l=0;}
+                  }
+                  // okay now paste in a lattice
+                  double LatticeSideLength=40;
+                  double R=20; // SkyrmionRadius;
+                  // lattice vectors
+                  double a1x=1; double a1y=0;
+                  double a2x =0.5f; double  a2y=sqrt(3)/2.0f;
+
+                  a1x *=LatticeSideLength; a1y *=LatticeSideLength;
+                  a2x *=LatticeSideLength; a2y *=LatticeSideLength;
+
+                  for (int n1=0; n1<2; n1++)
+                  {
+                    for (int n2=0; n2<2; n2++)
+                    {
+                      double vx = n1*a1x + n2*a2x;
+                      double vy = n1*a1y + n2*a2y;
+
+                      // this is horribly inefficient but whatever
+                      k=l=m=0;
+                      for (j=0; j<LL; j++) 
+                      {
+                        double r = sqrt((x(k)-vx)*(x(k)-vx)+(y(l)-vy)*(y(l)-vy));
+                        if (r<R)
+                        {
+                            double phi = atan2(y(l)-vy,x(k)-vx);
+                            nz[j] = cos(M_PI*r/R);
+
+                            // degree +1 , untwisted
+                            nx[j] = sin(M_PI*r/R)*sin(phi);
+                            ny[j] = -sin(M_PI*r/R)*cos(phi);
+                            // polarisation for +1 untwisted
+                            px[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*cos(phi)/r;
+                            py[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*sin(phi)/r;
+                            pz[j] = 0.0;
+                        }
+                        // deal with the periodic boundaries
+                        k++;
+                        if (k==Lx) {l++; k=0;}
+                        if (l==Ly) {m++; l=0;}
+                      }
+                    }
+                  }
+                }
                 if( BENDZERO == 1)
                 {
                     int xup,xdwn,yup,ydwn,zup,zdwn;
