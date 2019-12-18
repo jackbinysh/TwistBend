@@ -119,7 +119,7 @@ void writeVTKfiles(const int n, const double *nx,const double *ny,const double *
 
     char vtk_data[200];
     ofstream output;
-    sprintf(vtk_data,"%svtk_data_%d.vtk",prefix,n);
+    sprintf(vtk_data,"%s_vtk_data_%d.vtk",RunName.c_str(),n);
     output.open(vtk_data);
     output.precision(12);
 
