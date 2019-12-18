@@ -65,7 +65,7 @@ int main(int argc, char** argv)
     // the summary stats file
     char buf[128];
     FILE *fileStats;
-    sprintf(buf,"summary_statistics.dat");
+    sprintf(buf,(RunName+"_summary_statistics.dat").c_str());
     fileStats=fopen(buf,"a");
     setbuf(fileStats, NULL);
     fprintf(fileStats, "timestep  FreeEnergy\n"); 
@@ -95,7 +95,7 @@ int main(int argc, char** argv)
                     computeBendTwistEnergyOrientation(n,nx,ny,nz,bx,by,bz,px,py,pz,bmag,twist,FreeEnergy,tx,ty,tz);
                     Link Curve;
                     FindBendZeros(Curve,nx,ny,nz,bx,by,bz, bmag,tx,ty,tz,mask);
-                    print_Curve(n,Curve, "vtk_bendzeros");
+                    print_Curve(n,Curve, RunName+"_bendzeros");
 
                 }
                 n++;

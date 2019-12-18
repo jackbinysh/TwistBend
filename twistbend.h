@@ -26,15 +26,16 @@ using namespace std;
 
 const int Nmax = 20000;       // Number of timesteps
 const int vtkstepskip = 50;   // print pitch and bend every stepskip timesteps
-const int curvestepskip = 500;   // print pitch and bend every stepskip timesteps
-const int curvestarttime = 10000;   // print pitch and bend every stepskip timesteps
-const int Lx = 100;          // System size
-const int Ly = 100;          // System size
-const int Lz = 100;         // System size
+const int curvestepskip = 100;   // print pitch and bend every stepskip timesteps
+const int curvestarttime = 100;   // print pitch and bend every stepskip timesteps
+const int Lx = 50;          // System size
+const int Ly = 50;          // System size
+const int Lz = 50;         // System size
 
-#define BC 1 // periodic (0) or fixed (1) boundary conditions -- currently only fixed along z
+#define BC 0 // periodic (0) or fixed (1) boundary conditions -- currently only fixed along z
 
 // user defined settings
+const string    RunName="MyRun";     // Name of the run
 const int    LL=Lx*Ly*Lz;     // total system size
 const double    K = 0.04;       // elastic constant
 const double dt = 0.65;        // integration timestep
@@ -56,7 +57,6 @@ const string director_filename="vtk_data_1150.vtk";
 // the input filename, in the form "xxxxx.txt"
 const std::string knot_filename="Unknot";
 const int starttime=0;
-const char prefix[] = ""; // CHANGE THIS TO A FILE ON YOUR COMPUTER
 
 // ============================================================
 // structures which are used in the code
