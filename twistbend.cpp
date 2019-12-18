@@ -370,7 +370,7 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                             // polarisation for +1 untwisted
                             px[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*cos(phi)/r;
                             py[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*sin(phi)/r;
-                            pz[j] = 0.0;
+                            pz[j] = 0.01;
 
                             // twisted
                             //nx[j] = sin(M_PI*r/R)*sin(phi+2.0*M_PI*m/Lz);
@@ -392,7 +392,7 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                 } // end square
                 if(LATTICE==1)
                 {
-                  // begin by filling the box with heliconical
+                  // begin by filling the box with heliconical, resolved upwards slightly
                   for (j=0; j<LL; j++)
                   {
                       // director field
@@ -418,9 +418,9 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                   a1x *=LatticeSideLength; a1y *=LatticeSideLength;
                   a2x *=LatticeSideLength; a2y *=LatticeSideLength;
 
-                  for (int n1=0; n1<2; n1++)
+                  for (int n1=-20; n1<20; n1++)
                   {
-                    for (int n2=0; n2<2; n2++)
+                    for (int n2=-20; n2<20; n2++)
                     {
                       double vx = n1*a1x + n2*a2x;
                       double vy = n1*a1y + n2*a2y;
@@ -441,7 +441,7 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                             // polarisation for +1 untwisted
                             px[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*cos(phi)/r;
                             py[j] = -sin(M_PI*r/R)*sin(M_PI*r/R)*sin(phi)/r;
-                            pz[j] = 0.0;
+                            pz[j] = 0.01;
                         }
                         // deal with the periodic boundaries
                         k++;
