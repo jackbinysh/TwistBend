@@ -409,8 +409,10 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                       if (l==Ly) {m++; l=0;}
                   }
                   // okay now paste in a lattice
-                  double LatticeSideLength=40;
-                  double R=20; // SkyrmionRadius;
+                  double LatticeSideLength=140;
+                  double R=70; // SkyrmionRadius;
+                  int xSkyrmionNumber = Lx/LatticeSideLength;
+                  int ySkyrmionNumber = Ly/LatticeSideLength;
                   // lattice vectors
                   double a1x=1; double a1y=0;
                   double a2x =0.5f; double  a2y=sqrt(3)/2.0f;
@@ -418,9 +420,9 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                   a1x *=LatticeSideLength; a1y *=LatticeSideLength;
                   a2x *=LatticeSideLength; a2y *=LatticeSideLength;
 
-                  for (int n1=-20; n1<20; n1++)
+                  for (int n1=-2*xSkyrmionNumber; n1<2*xSkyrmionNumber; n1++)
                   {
-                    for (int n2=-20; n2<20; n2++)
+                    for (int n2=-2*ySkyrmionNumber; n2<2*ySkyrmionNumber; n2++)
                     {
                       double vx = n1*a1x + n2*a2x;
                       double vy = n1*a1y + n2*a2y;
