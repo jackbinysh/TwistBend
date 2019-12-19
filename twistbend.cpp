@@ -344,7 +344,7 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                 if (SQUARE == 1)
                 {
                     double r,R,phi;
-                    R = 0.8*Lx/2.0;
+                    R = 0.4*Lx/2.0;
 
                     for (j=0; j<LL; j++) {
                         // default is heliconical texture
@@ -409,7 +409,7 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                       if (l==Ly) {m++; l=0;}
                   }
                   // okay now paste in a lattice
-                  double LatticeSideLength=140;
+                  double LatticeSideLength=160;
                   double R=70; // SkyrmionRadius;
                   int xSkyrmionNumber = Lx/LatticeSideLength;
                   int ySkyrmionNumber = Ly/LatticeSideLength;
