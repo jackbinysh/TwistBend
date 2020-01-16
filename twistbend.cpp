@@ -165,10 +165,10 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
 
                 // define texture to simulate -- 0 or 1
                 HELICONICAL = 0; // standard heliconical texture
-                HOPF = 0; // Hopf texture
+                HOPF = 1; // Hopf texture
                 HOPF2 = 0; // Hopf texture
                 SQUARE = 0;
-                LATTICE = 1;
+                LATTICE = 0;
                 BENDZERO=0;
 
                 // initial configuration
@@ -212,7 +212,7 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                     // the raidus of the central core
                     double RR = 0.2*Lx;  // scale
                     // how fat the hopfion should be
-                    double RR2 =0.05*Lx;  // scale
+                    double RR2 =0.1*Lx;  // scale
                     for (j=0; j<LL; j++)
                     {
                         // heliconical
@@ -231,7 +231,8 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                         {
                             theta = atan2(m-m0,rr-RR);
                             if (theta < 0.0) {theta+=2.0*M_PI;} // put in the range [0,2pi)
-                            phi = atan2(l-l0,k-k0);
+                    //        phi = atan2(l-l0,k-k0);
+                            phi = 0;
                             if (phi < 0.0) {phi+=2.0*M_PI;} // put in the range [0,2pi)
 
                             // cross-section looks like double twist and an escaped -1
@@ -651,7 +652,55 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                 n = starttime;
                 break;
             }
-        case FROM_SOLIDANGLE:
+        case FROM_SOLIDANGLE_BENDZERO:
+            {
+                cout << "Initialising from a twisted solid angle function ...\n";
+                InitialiseSystemParameters();
+                int j,k,l,m;
+                double omega,alpha,R,rho;
+                // for initialising the polarisation
+                int xup,xdwn,yup,ydwn,zup,zdwn;
+                double norm;
+                // initialise the knot
+                Link Curve;
+                if(0==InitialiseFromFile(Curve))
+                {
+                    cout << "Filling in the Geometry of the Input Curve \n";
+                    ComputeGeometry(Curve);
+                    OutputScaledKnot(Curve);
+                }
+                // initial configuration
+                k=l=m=0;
+                viewpoint Point;
+                omega=0.0;  // overly cautious!!
+
+                double* omega_array =new double[LL];
+                for (j=0; j<LL; j++)
+                {
+
+                    Point.xcoord = x(k); //1.0*k-Lx/2.0+0.5;
+                    Point.ycoord = y(l); //1.0*l-Ly/2.0+0.5;
+                    Point.zcoord = z(m); //1.0*m-Lz/2.0+0.5;
+
+                    omega = ComputeSolidAngleOnePoint(Curve,Point);
+                    omega_array[j]=omega;
+
+                    nx[j] = sin(thetah)*cos(qh*m+(0.5*omega));
+                    ny[j] = sin(thetah)*sin(qh*m+(0.5*omega));
+                    nz[j] = cos(thetah);
+
+                    px[j] = -sin(qh*m);
+                    py[j] = cos(qh*m);
+                    pz[j] = 0.0;
+
+                    k++;
+                    if (k==Lx) {l++; k=0;}
+                    if (l==Ly) {m++; l=0;}
+                }
+                OutputSolidAngle(Curve,omega_array,"solidangle");
+                break;
+            }
+        case FROM_SOLIDANGLE_HOPFION:
             {
                 cout << "Initialising from a twisted solid angle function ...\n";
                 InitialiseSystemParameters();
@@ -754,7 +803,7 @@ void startconfig(int & n, double* nx, double* ny,double* nz,double* px, double* 
                     if (k==Lx) {l++; k=0;}
                     if (l==Ly) {m++; l=0;}
                 }
-
+                break;
             }
     }
 }
